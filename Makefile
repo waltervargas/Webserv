@@ -6,35 +6,43 @@
 #    By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/04/14 17:38:09 by kbolon            #+#    #+#              #
-#    Updated: 2025/04/14 17:38:24 by kbolon           ###   ########.fr        #
+#    Updated: 2025/04/30 16:30:13 by kbolon           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME = webserv
 
-SRCS = 	main.cpp
+SRC_DIR = srcs
+INC_DIR = includes
+OBJ_DIR = obj
 
-CC = c++
-OBJS_DIR = obj
-OBJS = $(addprefix $(OBJS_DIR)/, $(SRCS:.cpp=.o))
-CFLAGS = -Wall -Wextra -Werror -std=c++98
+SRCS = 	server_main.cpp \
+		$(SRC_DIR)/ServerSocket.cpp $(SRC_DIR)/ClientConnection.cpp $(SRC_DIR)/helperFunction.cpp
 
-all: $(NAME)
+#patsubst is short for pattern substitution, works with items in multiple folders
+OBJS = $(SRCS:.cpp=.o)
+OBJS := $(patsubst %, $(OBJ_DIR)/%,$(OBJS))
+
+CXX = c++
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I $(INC_DIR)
+
+all: $(NAME) client
 
 $(NAME): $(OBJS)
-	$(CC) $(CFLAGS) -o $(NAME) $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $^
 
-$(OBJS_DIR)/%.o: %.cpp | $(OBJS_DIR)
-	$(CC) $(CFLAGS) $(INCLUDE) -c -o $@ $<
+client: test_client.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $^
 
-$(OBJS_DIR):
-	mkdir -p $(OBJS_DIR)
+$(OBJ_DIR)/%.o: %.cpp 
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -o $@ 
 
 clean:
-	rm -rf $(OBJS_DIR)
+	rm -rf $(OBJ_DIR)
 
 fclean: clean
-	rm -f $(NAME)
+	rm -f $(NAME) client
 
 re: fclean all
 
