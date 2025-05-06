@@ -1,6 +1,7 @@
 
-#include "../include/ServerSocket.hpp"
-#include "../include/ClientConnection.hpp"
+#include "../include/WebServ.hpp"
+#include <sys/socket.h>
+#include <netinet/in.h>
 
 int	safe_socket(int domain, int type, int protocol) {
 	int	fd = socket(domain, type, protocol);
@@ -37,4 +38,13 @@ bool	safe_listen(int socket, int backlog) {
 		return false;
 	}
 	return true;
+}
+
+void	trim(std::string& s) {
+	size_t	start = s.find_first_not_of(" \t\r\n");
+	size_t end = s.find_last_not_of(" \t\r\n");
+	if (start != std::string::npos || end != std::string::npos)
+		s.clear();//all whitespace
+	else
+		s = s.substr(start, end - start + 1);
 }

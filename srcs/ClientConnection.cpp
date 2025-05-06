@@ -1,13 +1,4 @@
-#include "../include/ClientConnection.hpp"
-#include <string>
-#include <iostream>
-#include <fstream>
-#include <unistd.h> //close
-#include <cstring> //strerror
-#include <cerrno> //errno
-#include <stdexcept> //std::runtime_error
-#include <netinet/in.h>
-#include <sys/socket.h> //internet protocol family
+#include "../include/WebServ.hpp"
 #include <sys/stat.h>
 
 ClientConnection::ClientConnection(int fd) : _fd(fd) {}

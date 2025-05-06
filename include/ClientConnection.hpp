@@ -1,5 +1,7 @@
 #ifndef CLIENTCONNECTION_HPP
 #define CLIENTCONNECTION_HPP
+
+#include "WebServ.hpp"
 #include <string>
 
 class ClientConnection {
