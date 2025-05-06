@@ -10,6 +10,10 @@
 
 ServerSocket::ServerSocket() : _fd(-1) {}
 
+/*void	initialisePollFDs() {
+	fds.reserve(1024);
+}*/
+
 ServerSocket::~ServerSocket() {
 	closeSocket();
 }
@@ -66,4 +70,8 @@ void	ServerSocket::closeSocket() {
 
 int		ServerSocket::getFD() {
 	return _fd;
+}
+
+int		ServerSocket::getPort() {
+	return _port;
 }
