@@ -1,5 +1,7 @@
 
 #include "../include/WebServ.hpp"
+#include "../include/ConfigParser.hpp"
+#include "../include/LocationConfig.hpp"
 #include <sys/socket.h>
 #include <netinet/in.h>
 
@@ -40,11 +42,27 @@ bool	safe_listen(int socket, int backlog) {
 	return true;
 }
 
-void	trim(std::string& s) {
+std::string	trim(std::string& s) {
 	size_t	start = s.find_first_not_of(" \t\r\n");
 	size_t end = s.find_last_not_of(" \t\r\n");
-	if (start != std::string::npos || end != std::string::npos)
+	if (start == std::string::npos || end == std::string::npos) {
 		s.clear();//all whitespace
-	else
+		return "";
+	}
+	else {
 		s = s.substr(start, end - start + 1);
+		return s;
+	}
 }
+
+/*void	parseBlock(std::ifstream& file, const std::string& type, ServerConfig& server) {
+	if (type == "server") {
+		parseServerBlock(file, server);
+		servers.puch_back(server);
+	}
+	else if (type == "location") {
+		LocationConfig location;
+		parseLocationBlock(file, location);
+		server.locations.push_back(location);
+	}
+}*/
