@@ -4,6 +4,33 @@ ConfigParser::ConfigParser() {}
 
 ConfigParser::~ConfigParser() {}
 
+
+static bool	parseKeyValue(const std::string& line, std::string& key, std::string& value) {
+	std::istringstream iss(line);
+	if (!(iss >> key))
+		return false;
+	std::getline(iss, value);
+	trim(value);
+	if (!value.empty() && value[value.size() - 1] == ';')
+		value = value.substr(0, value.size() - 1);
+	trim(value);
+	return !value.empty(); //only return true if a value was found/parsed
+}
+
+static bool	parseType(const std::string& line, const std::string& expected_type) {
+	std::istringstream iss(line);
+	std::string	type, next, character;
+	if (!(iss >> type))//checks if server or location
+		return false;
+	if (expected_type == "server" && type == "server" && iss >> character && character == "{") {
+		return true;
+	}
+	if (expected_type == "location" && type == "location" && iss >> character && character == "/") {
+		return true;
+	}
+	return false;
+}
+
 void	ConfigParser::parseFile(const std::string& path) {
 	std::ifstream file(path.c_str());
 	if (!file.is_open()) {
@@ -11,14 +38,14 @@ void	ConfigParser::parseFile(const std::string& path) {
 	}
 	std::string line;
 	while (std::getline(file, line)) {
-		std::cout << "Parsing line: " << line << std::endl;
+//		std::cout << "Parsing line: " << line << std::endl;
 		trim(line);
-		if (line.empty() || line[0] == '#')
+		if (line.empty() || line[0] == '#') {
 			continue;
-		std::istringstream iss(line);
-		std::string key, next;
-		iss >> key >> next;
-		if (key == "server" && next == "{") {
+		}
+		std::cout << "in Parse File\n";
+		if (parseType(line, "server")) {
+//			std::cout << "SERVER BLOCK FOUND\n";
 			ServerConfig	server;
 			parseServerBlock(file, server);
 			servers.push_back(server);
@@ -29,78 +56,86 @@ void	ConfigParser::parseFile(const std::string& path) {
 void ConfigParser::parseServerBlock(std::ifstream& file, ServerConfig& server) {
 	std::string	line;
 	int depth = 1;
-
 	while (std::getline(file, line)) {
 		trim(line);
 		// ❌ Skip comments and empty lines
 		if (line.empty() || line[0] == '#')
 			continue;
-		if (line == "{") depth++;
+		if (line == "{") {
+			depth++;
+			continue;
+		}
 		if (line == "}") {
 			depth--;
 			if (depth == 0) return;
 			continue;
 		}
 
-		if (line.find("location") == 0 && line.find("{") != std::string::npos) {
+		if (parseType(line, "location")) {
 			LocationConfig	location;
-			size_t	start = line.find("location") + 8;
-			size_t	end = line.find("{");
-			std::string	path = line.substr(start, end - start);
-			trim(path);
-			location.path = path;
 			parseLocationBlock(file, location);
 			server.locations.push_back(location);
+			continue;
 		}
-		else {
-			std::istringstream iss(line);
-			std::string key, value;
-			iss >> key >> value;
-			if (!value.empty() && value[value.size() - 1] == ';')
-				value = value.substr(0, value.size() - 1);
-
-
-			// 🌈 Parse the key-value pairs
-			// for now, we only handle listen, host, root, and index
-			// later we will add more options
-			// like error pages, cgi, etc.
-			if (key == "listen") server.port = std::atoi(value.c_str());
-			else if (key == "host") server.host = value;
-			else if (key == "root") server.root = value;
-			else if (key == "index") server.index = value;
+		std::string key, value;
+		if (parseKeyValue(line, key, value)) {
+			if (value.empty()) {
+				std::cerr << "⚠️ value is empty for " << key << "skipping line\n";
+				continue;
+			}
+			if (key == "listen") {
+				server.port = std::atoi(value.c_str());
+				std::cout << "Server block listen: " << server.port << std::endl;
+			}
+			else if (key == "host") {
+				server.host = value; 
+				std::cout << "Server block host: " << server.host << std::endl;
+			}
+			else if (key == "root") {
+				server.root = value;
+				std::cout << "Server block root: " << server.root << std::endl;
+			}
+			else if (key == "index") {
+				server.index = value;
+				std::cout << "Server block index: " << server.index << std::endl;
+			}
+			else if (key == "error_page")
+			std::cout << "Server block error page\n";
+			}
 		}
 	}
-}
+
 
 void ConfigParser::parseLocationBlock(std::ifstream& file, LocationConfig& location) {
 	std::string	line;
 	int depth = 1;
+	std::cout << "LOCATION BLOCK FOUND\n";
 
 	while (std::getline(file, line)) {
 		trim(line);
 		// ❌ Skip comments and empty lines
 		if (line.empty() || line[0] == '#') continue;
-		if (line == "{") depth++;
+		if (line == "{") {
+			depth++;
+			continue;
+		}
 		if (line == "}") {
 			depth--;
 			if (depth == 0)
 				return;
 			continue;
 		}
-		std::istringstream iss(line);
 		std::string key, value;
-		iss >> key >> value;
-		if (!value.empty() && value[value.size() - 1] == ';')
-		value = value.substr(0, value.size() - 1);
-
-
-		// 🌈 Parse the key-value pairs
-		// for now, we only handle listen, host, root, and index
-		// later we will add more options
-		// like error pages, cgi, etc.
-
-		if (key == "root") location.root = value;
-		else if (key == "index") location.index = value;
+		if (parseKeyValue(line, key, value)) {
+			if (key == "root") {
+				location.root = value;
+				std::cout << "Location block root: " << location.root << std::endl;
+			}
+			else if (key == "index") {
+				location.index = value;
+				std::cout << "Location block index: " << location.index << std::endl;
+			}
+		}
 	}
 }
 

@@ -10,7 +10,6 @@ int main(int ac, char **av) {
 		std::cerr << "❌ Usage: ./program configFile\n";
 		return 1;
 	}
-
 	ConfigParser	parser;
 	try {
 		parser.parseFile(av[1]);
