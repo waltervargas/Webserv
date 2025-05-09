@@ -45,7 +45,7 @@ int main() {
 	//initialise the first server
 	int port = servers[0].port;
 
-	std::cout << "Starting server on port" << port << std::endl;
+	std::cout << "Starting server on port: " << port << std::endl;
 	//creating socket
 	int	clientSocket = socket(AF_INET, SOCK_STREAM, 0);
 

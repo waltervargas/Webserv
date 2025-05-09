@@ -1,5 +1,16 @@
-#ifndef	SERVERSOCKET_HPP
-#define	SERVERSOCKET_HPP
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   ServerSocket.hpp                                   :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/09 13:53:08 by kbolon            #+#    #+#             */
+/*   Updated: 2025/05/09 13:53:09 by kbolon           ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#pragma once
 
 #include "WebServ.hpp"
 #include <sys/socket.h>
@@ -25,6 +36,5 @@ class ServerSocket {
     int   getPort();
 };
 
-#endif
 
 

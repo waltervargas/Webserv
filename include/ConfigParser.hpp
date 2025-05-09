@@ -1,8 +1,19 @@
-#ifndef CONFIGPARSER_HPP
-#define	CONFIGPARSER_HPP
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   ConfigParser.hpp                                   :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/09 13:53:27 by kbolon            #+#    #+#             */
+/*   Updated: 2025/05/09 14:06:25 by kbolon           ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
-#include "WebServ.hpp"
+#pragma once
+
 #include "ServerConfig.hpp"
+#include "LocationConfig.hpp"
 #include <vector>
 
 
@@ -14,10 +25,9 @@ public:
   void	parseFile(const std::string& path);
   void	parseServerBlock(std::ifstream& file, ServerConfig& server);
   void	parseLocationBlock(std::ifstream& file, LocationConfig& location);
-  
+  void  print() const;
+
   private:
   std::vector<ServerConfig> servers;
 
 };
-
-#endif

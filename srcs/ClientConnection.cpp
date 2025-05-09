@@ -1,5 +1,11 @@
 #include "../include/WebServ.hpp"
 #include <sys/stat.h>
+#include <iostream>
+#include <unistd.h> //close
+#include <cstring> //strerror
+#include <sys/socket.h> //internet protocol family
+#include <string>
+#include <stdint.h>
 
 ClientConnection::ClientConnection(int fd) : _fd(fd) {}
 
