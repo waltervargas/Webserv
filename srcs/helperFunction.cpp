@@ -1,9 +1,10 @@
 
 #include "../include/WebServ.hpp"
-#include "../include/ConfigParser.hpp"
-#include "../include/LocationConfig.hpp"
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <cstring>
+#include <cerrno>
+#include <iostream>
 
 int	safe_socket(int domain, int type, int protocol) {
 	int	fd = socket(domain, type, protocol);

@@ -1,12 +1,32 @@
-#ifndef	LOCATIONCONFIG_HPP
-#define	LOCATIONCONFIG_HPP
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   LocationConfig.hpp                                 :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/09 13:53:22 by kbolon            #+#    #+#             */
+/*   Updated: 2025/05/09 14:09:54 by kbolon           ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
-#include "WebServ.hpp"
+#pragma once
+
+#include <map>
+#include <string>
+#include <map>
+#include <vector>
 
 struct	LocationConfig {
-	std::string	path;
-	std::string	root;
-	std::string	index;
-};
+	std::string	path;//e.g. "/upload" or "/cgi-bin"
+	std::string	root; //e.g. "/var/www/uploads"
+	std::vector<std::string> methods; //parsed from methods/allowed_methods: GET POST
+	std::string	index; // index.html
+	std::string	redirect;
+	std::string	upload_path;
+	std::map<std::string, std::string> cgi_paths; //py or php paths
+	bool	autoindex;
 
-#endif
+	LocationConfig();
+	void	print() const;
+};

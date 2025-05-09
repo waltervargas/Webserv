@@ -1,5 +1,16 @@
-#ifndef CLIENTCONNECTION_HPP
-#define CLIENTCONNECTION_HPP
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   ClientConnection.hpp                               :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/09 13:53:30 by kbolon            #+#    #+#             */
+/*   Updated: 2025/05/09 13:53:31 by kbolon           ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#pragma once
 
 #include "WebServ.hpp"
 #include <string>
@@ -18,5 +29,3 @@ class ClientConnection {
     int         getFd() const;
     void        closeConnection();
 };
-
-#endif

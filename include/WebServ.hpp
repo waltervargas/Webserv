@@ -6,18 +6,12 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/15 17:27:43 by keramos-          #+#    #+#             */
-/*   Updated: 2025/05/07 16:26:46 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/09 13:52:56 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef WEBSERV_HPP
-# define WEBSERV_HPP
+#pragma once
 
-# include "ClientConnection.hpp"
-# include "ConfigParser.hpp"
-# include "LocationConfig.hpp"
-# include "ServerConfig.hpp"
-# include "ServerSocket.hpp"
 # include <sys/socket.h>
 # include <netinet/in.h>
 # include <unistd.h>
@@ -32,6 +26,11 @@
 # include <string>
 # include <cstdlib>
 # include <csignal>
+# include "ClientConnection.hpp"
+# include "ConfigParser.hpp"
+# include "LocationConfig.hpp"
+# include "ServerConfig.hpp"
+# include "ServerSocket.hpp"
 
 //# define PORT 8081
 # define BUFFER_SIZE 4096
@@ -44,5 +43,3 @@ bool		safe_bind(int fd, sockaddr_in & addr);
 bool		safe_listen(int socket, int backlog);
 //bool		parseKeyValue(const std::string& line, std::string& key, std::string& value);
 //void		parseBlock(std::ifstream& file, const std::string& type, ServerConfig& server);
-
-#endif

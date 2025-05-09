@@ -1,0 +1,33 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   LocationConfig.cpp                                 :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/09 14:13:02 by kbolon            #+#    #+#             */
+/*   Updated: 2025/05/09 14:13:03 by kbolon           ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "../include/LocationConfig.hpp"
+#include <iostream>
+
+LocationConfig::LocationConfig() : autoindex(false) {}
+
+void	LocationConfig::print() const {
+	std::cout << "\nLOCATION:\n";
+	std::cout << "root: " << root << std::endl;
+	std::cout << "index: " << index << std::endl;
+	std::cout << "redirect: " << redirect << std::endl;
+	std::cout << "autoindex: " << autoindex << std::endl;
+	std::cout << "methods: ";
+	for (size_t i = 0; i < methods.size(); i++)
+		std::cout << methods[i] << " ";
+	std::cout << std::endl;
+	std::cout << "upload_path: " << upload_path << std::endl;
+
+	for (std::map<std::string, std::string>::const_iterator it = cgi_paths.begin(); it != cgi_paths.end(); ++it) {
+		std::cout << "cgi[" << it->first << "] = " << it->second << std::endl;
+	}
+}

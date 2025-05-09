@@ -58,7 +58,7 @@ OBJ_DIR = objs
 
 SRCS = 	server_main.cpp \
 		$(SRC_DIR)/ServerSocket.cpp $(SRC_DIR)/ClientConnection.cpp $(SRC_DIR)/helperFunction.cpp \
-		$(SRC_DIR)/ConfigParser.cpp
+		$(SRC_DIR)/ConfigParser.cpp $(SRC_DIR)/LocationConfig.cpp $(SRC_DIR)/ServerConfig.cpp
 		
 
 #patsubst is short for pattern substitution, works with items in multiple folders
@@ -84,14 +84,15 @@ $(NAME): $(OBJS)
 	@$(CXX) $(CXXFLAGS) -o $@ $^ > /dev/null
 	@echo "${CHECK} Compiling utilities! ${RT}"
 
-client: test_client.cpp $(SRC_DIR)/ConfigParser.cpp $(SRC_DIR)/helperFunction.cpp
+client: test_client.cpp $(SRC_DIR)/ConfigParser.cpp $(SRC_DIR)/helperFunction.cpp \
+	$(SRC_DIR)/LocationConfig.cpp $(SRC_DIR)/ServerConfig.cpp
 	@$(CXX) $(CXXFLAGS) -o $@ $^ > /dev/null
 
 create_obj_dir:
 	@mkdir -p $(OBJ_DIR)
 	@echo "${CHECK} Object directory created!"
 	
-$(OBJ_DIR)/%.o: %.cpp | create_obj_dir
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | create_obj_dir
 	@mkdir -p $(dir $@)
 	@$(CXX) $(CXXFLAGS) -c $< -o $@ > /dev/null
 

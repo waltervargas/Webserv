@@ -18,7 +18,7 @@ int main(int ac, char **av) {
 		std::cerr << "❌ Error while parsing config: " << e.what() << std::endl;
 		return 1;
 	}
-
+	parser.print();
 	const	std::vector<ServerConfig>& servers = parser.getServers();
 	if (servers.empty()) {
 		std::cerr << "❌ Error: No servers found in config file.\n";
@@ -26,7 +26,7 @@ int main(int ac, char **av) {
 	}
 	//initialise the first server
 	int port = servers[0].port;
-	std::cout << "Starting server on port" << port << std::endl;
+	std::cout << "Starting server on port: " << port << std::endl;
 
 	ServerSocket	server;
 	if (!server.init(port)) {
