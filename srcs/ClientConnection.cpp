@@ -20,7 +20,7 @@ create a loop to listen until data is done or connection is closed
 bool	ClientConnection::receiveMessage() {
 	const size_t	bufferSize = 1024;
 	char buffer[bufferSize];
-	mkdir("output", 0777); //ignores if already exists
+	mkdir("test/output", 0777); //ignores if already exists
 
 	while (true) { //replace with poll()
 

@@ -83,7 +83,6 @@ void ConfigParser::parseServerBlock(std::ifstream& file, ServerConfig& server) {
 			if (type == "location" && brace == "{") {
 				LocationConfig	location;
 				location.path = path; //save URL path for location block (upload etc)
-				std::cout << "\nLOCATION " << location.path << ": \n";
 				parseLocationBlock(file, location);
 				server.locations.push_back(location);
 				continue;
@@ -102,23 +101,18 @@ void ConfigParser::parseServerBlock(std::ifstream& file, ServerConfig& server) {
 			}
 			else if (key == "host") {
 				server.host = value;
-//				std::cout << "host: " << server.host << std::endl;
 			}
 			else if (key == "server_name") {
 				server.server_name = value; 
-//				std::cout << "server_name: " << server.server_name << std::endl;
 			}
 			else if (key == "root") {
 				server.root = value;
-//				std::cout << "root: " << server.root << std::endl;
 			}
 			else if (key == "index") {
 				server.index = value;
-//				std::cout << "index: " << server.index << std::endl;
 			}
 			else if (key == "client_max_body_size") {
 				server.client_max_body_size = std::atol(value.c_str());
-//				std::cout << "client_max_body_size: " << server.client_max_body_size << std::endl;
 			}
 			else if (key == "error_page") {
 				std::istringstream iss(value);
@@ -126,7 +120,6 @@ void ConfigParser::parseServerBlock(std::ifstream& file, ServerConfig& server) {
 				std::string	path;
 				if (iss >> code >> path) {
 					server.error_pages[code] = path;
-//					std::cout << "error page " << code << " set to " << path << std::endl;
 				}
 				else
 					std::cerr << "⚠️ Couldn't read error page\n";
@@ -157,41 +150,30 @@ void ConfigParser::parseLocationBlock(std::ifstream& file, LocationConfig& locat
 		if (parseKeyValue(line, key, value)) {
 			if (key == "root") {
 				location.root = value;
-//				std::cout << "root: " << location.root << std::endl;
 			}
 			else if (key == "index") {
 				location.index = value;
-//				std::cout << "index: " << location.index << std::endl;
 			}
 			else if (key == "redirect") {
 				location.redirect = value;
-//				std::cout << "redirect: " << location.redirect << std::endl;
 			}
 			else if (key == "autoindex") {
 				if (value == "on")
 					location.autoindex = true;
-//				std::cout << "autoindex: " << location.autoindex << std::endl;
 			}
 			else if (key == "allowed_methods" || key == "methods") {
 				location.methods = line_splitter(value);
-//				std::cout << "methods: ";
-//				for (size_t i = 0; i < location.methods.size(); i++)
-//					std::cout << location.methods[i] << " ";
-//				std::cout << std::endl;
 			}
 			else if (key == "upload_path") {
 				location.upload_path = value;
-//				std::cout << "upload_path: " << location.upload_path << std::endl;
 			}
 			else if (key == "cgi_path") {
 				location.cgi_paths["default"] = value;
-//				std::cout << "Default CGI path set: " << location.cgi_paths["default"] << std::endl;
 			}
 			else if (key == "cgi") {
 				std::vector<std::string> parts = line_splitter(value);
 				if (parts.size() == 2) {
 					location.cgi_paths[parts[0]] = parts[1];
-//					std::cout << "CGI extension: " << parts[0] << std::endl;
 				}
 				else
 					std::cerr << "⚠️ Couldn't read cgi directives\n";
