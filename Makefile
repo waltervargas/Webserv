@@ -56,13 +56,13 @@ SRC_DIR = srcs
 INC_DIR = includes
 OBJ_DIR = objs
 
-SRCS = 	server_main.cpp \
+SRCS = 	$(SRC_DIR)/WebServ.cpp \
 		$(SRC_DIR)/ServerSocket.cpp $(SRC_DIR)/ClientConnection.cpp $(SRC_DIR)/helperFunction.cpp \
 		$(SRC_DIR)/ConfigParser.cpp $(SRC_DIR)/LocationConfig.cpp $(SRC_DIR)/ServerConfig.cpp
 		
 
 #patsubst is short for pattern substitution, works with items in multiple folders
-OBJS = $(SRCS:.cpp=.o)
+OBJS = $(notdir $(SRCS:.cpp=.o))
 OBJS := $(patsubst %, $(OBJ_DIR)/%,$(OBJS))
 
 # **************************************************************************** #
@@ -84,7 +84,7 @@ $(NAME): $(OBJS)
 	@$(CXX) $(CXXFLAGS) -o $@ $^ > /dev/null
 	@echo "${CHECK} Compiling utilities! ${RT}"
 
-client: test_client.cpp $(SRC_DIR)/ConfigParser.cpp $(SRC_DIR)/helperFunction.cpp \
+client: $(SRC_DIR)/test_client.cpp $(SRC_DIR)/ConfigParser.cpp $(SRC_DIR)/helperFunction.cpp \
 	$(SRC_DIR)/LocationConfig.cpp $(SRC_DIR)/ServerConfig.cpp
 	@$(CXX) $(CXXFLAGS) -o $@ $^ > /dev/null
 

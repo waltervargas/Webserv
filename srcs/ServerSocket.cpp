@@ -34,6 +34,12 @@ bool	ServerSocket::init(int port) {
 	_fd = safe_socket(AF_INET, SOCK_STREAM, 0);
 	if (_fd == -1) return false;
 
+	//make it non-block (fcntl sets fd to nonblock)
+	if (fcntl(_fd, F_SETFL, O_NONBLOCK) == -1) {
+		std::cerr << "Failed to set FD to non-blocking: " << std::strerror(errno) << std::endl;
+		close(_fd);
+		return -1;
+	}
 	sockaddr_in serverAddress;
 	serverAddress.sin_family = AF_INET;	
 	serverAddress.sin_port = htons(port); 
@@ -55,8 +61,14 @@ int		ServerSocket::acceptClient() {
 	int	client_fd = accept(_fd, nullptr, nullptr);
 	if (client_fd == -1) {
 		std::cerr << "Failed to accept: " << std::strerror(errno) << std::endl;
-		closeSocket();
-		return 1;
+//		closeSocket();
+		return -1;
+	}
+	//Make client fd non-blocking
+	if (fcntl(client_fd, F_SETFL, O_NONBLOCK) == -1) {
+		std::cerr << "Failed to set FD to non-blocking: " << std::strerror(errno) << std::endl;
+		close(client_fd);
+		return -1;
 	}
 	return client_fd;
 }
