@@ -78,6 +78,11 @@ bool	ClientConnection::receiveMessage() {
 	return true;
 }
 
+bool	ClientConnection::sendMessage() {
+	const	std::string	response = 
+
+}
+
 std::string	ClientConnection::getMessage() const {
 	return _message;
 }
