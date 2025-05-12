@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 13:53:30 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/09 13:53:31 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/10 09:58:59 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@ class ClientConnection {
     ~ClientConnection();
 
     bool        receiveMessage();
+    bool        sendMessage();
     std::string	getMessage() const;
     int         getFd() const;
     void        closeConnection();
