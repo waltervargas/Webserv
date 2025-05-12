@@ -6,6 +6,7 @@
 #include <stdexcept> //std::runtime_error
 #include <netinet/in.h>
 #include <sys/socket.h> //internet protocol family
+#include <arpa/inet.h>
 
 
 ServerSocket::ServerSocket() : _fd(-1) {}
@@ -30,7 +31,7 @@ Bind the socket, tell it to listen to the socket referred to by serverSocket_fd.
 Then we accept the connection request that is received on the socket 
 the app is listening to
 */
-bool	ServerSocket::init(int port) {
+bool	ServerSocket::init(int port, const std::string& host) {
 	_fd = safe_socket(AF_INET, SOCK_STREAM, 0);
 	if (_fd == -1) return false;
 
@@ -38,38 +39,48 @@ bool	ServerSocket::init(int port) {
 	if (fcntl(_fd, F_SETFL, O_NONBLOCK) == -1) {
 		std::cerr << "Failed to set FD to non-blocking: " << std::strerror(errno) << std::endl;
 		close(_fd);
-		return -1;
+		return false;
 	}
 	sockaddr_in serverAddress;
 	serverAddress.sin_family = AF_INET;	
-	serverAddress.sin_port = htons(port); 
-	serverAddress.sin_addr.s_addr = INADDR_ANY;
-
+	serverAddress.sin_port = htons(port);
+	serverAddress.sin_addr.s_addr = INADDR_ANY; //we may have to use inet_addr to convert
+	if (host == "0.0.0.0")
+		serverAddress.sin_addr.s_addr = INADDR_ANY;
+	else {
+		serverAddress.sin_addr.s_addr = inet_addr(host.c_str());
+		if (serverAddress.sin_addr.s_addr == INADDR_NONE) {
+			std::cerr << "Invalid host address" << std::endl;
+			closeSocket();
+			return false;
+		}
+	}
 	if (!safe_bind(_fd, serverAddress)) {
 		closeSocket();
 		return false;
 	}
 
-	if (!safe_listen(_fd, 5)) {
+	if (!safe_listen(_fd, 20)) {
 		closeSocket();
 		return false;
 	}
+//	std::ostringstream ss;
+//	ss << "\nServer is listening on " << host << ":" << port;
 	return true;
 }
 
 int		ServerSocket::acceptClient() {
-	int	client_fd = accept(_fd, nullptr, nullptr);
+	int	client_fd = accept(_fd, NULL, NULL);
 	if (client_fd == -1) {
 		std::cerr << "Failed to accept: " << std::strerror(errno) << std::endl;
-//		closeSocket();
 		return -1;
 	}
-	//Make client fd non-blocking
 	if (fcntl(client_fd, F_SETFL, O_NONBLOCK) == -1) {
 		std::cerr << "Failed to set FD to non-blocking: " << std::strerror(errno) << std::endl;
 		close(client_fd);
 		return -1;
 	}
+	std::cout << "Accepted connection on socket: " << client_fd << std::endl;
 	return client_fd;
 }
 

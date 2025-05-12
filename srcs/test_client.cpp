@@ -35,7 +35,7 @@ int main() {
 
 	ConfigParser	parser;
 
-	parser.parseFile("default.conf");
+	parser.parseFile("conf/default.conf");
 	const std::vector<ServerConfig>& servers = parser.getServers();
 	if (servers.empty()) {
 		std::cerr << "❌ Problem retrieving servers in test client\n";

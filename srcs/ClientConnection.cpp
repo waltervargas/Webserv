@@ -1,4 +1,4 @@
-#include "../include/WebServ.hpp"
+#include "../include/ClientConnection.hpp"
 #include <sys/stat.h>
 #include <iostream>
 #include <unistd.h> //close
@@ -6,6 +6,7 @@
 #include <sys/socket.h> //internet protocol family
 #include <string>
 #include <stdint.h>
+#include <fstream>
 
 ClientConnection::ClientConnection(int fd) : _fd(fd) {}
 
@@ -26,14 +27,15 @@ bool	ClientConnection::receiveMessage() {
 
 		//read filename length
 		uint8_t	nameLen = 0;
-		ssize_t bytes = recv(_fd, &nameLen, 1, 0);
-		if (bytes == 0) break; //client closed the connection
-		if (bytes != 1) {
-			std::cerr << "Failed to read filename length\n";
+		ssize_t bytes = recv(_fd, &nameLen, sizeof(nameLen), 0);
+		if (bytes <= 0) {
+			std::cerr << "Client Connection failed or closed\n";
 			return false;
 		}
-
-		//read filename
+		if (nameLen > 255) {
+			std::cerr << "File name is too long\n";
+			return false;
+		}
 		char	nameBuffer[256];
 		bytes = recv(_fd, nameBuffer, nameLen, 0);
 		if (bytes != nameLen) {
@@ -49,7 +51,7 @@ bool	ClientConnection::receiveMessage() {
 			std::cerr << "Failed to read file size\n";
 			return false;
 		}
-		std::string fullPath =  "output/" + fileName;
+		std::string fullPath =  "test/output/" + fileName;
 		std::ofstream	output(fullPath.c_str(), std::ios::binary);
 		if (!output) {
 			std::cerr << "Failed to open file for writing\n";
@@ -76,11 +78,6 @@ bool	ClientConnection::receiveMessage() {
 		std::cout << "Saved: " << fileName << std::endl;
 	}
 	return true;
-}
-
-bool	ClientConnection::sendMessage() {
-	const	std::string	response = 
-
 }
 
 std::string	ClientConnection::getMessage() const {
