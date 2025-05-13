@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/15 17:26:45 by keramos-          #+#    #+#             */
-/*   Updated: 2025/05/13 07:05:18 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/13 12:14:00 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -114,7 +114,7 @@ int	init_webserv(std::string configPath) {
 				int client_fd = fds[i].fd;
 				ClientConnection* client = clients[client_fd];
 				if (!client->receiveMessage()) {
-					std::cerr << "❌ Failed to receive message from client\n";
+					std::cerr << "Client has disconnected from server 👋\n";
 					close(client_fd);
 					delete client;
 					clients.erase(client_fd);

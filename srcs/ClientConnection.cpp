@@ -28,8 +28,16 @@ bool	ClientConnection::receiveMessage() {
 		//read filename length
 		uint8_t	nameLen = 0;
 		ssize_t bytes = recv(_fd, &nameLen, sizeof(nameLen), 0);
-		if (bytes <= 0) {
-			std::cerr << "Client Connection failed or closed\n";
+		if (bytes == 0) {
+			std::cerr << "✅ Message sent! Client closed the connection\n";
+			return false;
+		}
+		else if(bytes < 0) {
+			std::cerr << "❌ Client connection failed\n";
+			return false;
+		}
+		else if (bytes != sizeof(nameLen)) {
+			std::cerr << "❌ Failed to read file name length\n";
 			return false;
 		}
 		if (nameLen > 255) {

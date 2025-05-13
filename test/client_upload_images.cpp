@@ -1,15 +1,29 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   client_upload_images.cpp                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/13 16:14:38 by kbolon            #+#    #+#             */
+/*   Updated: 2025/05/13 16:37:10 by kbolon           ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include <cstring>
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <set>
+#include <sstream>
 #include <unistd.h>
 #include <netinet/in.h>
 #include <sys/socket.h> 
 #include <cctype> //for std::tolower
 #include <dirent.h> //to allow access to file directory
-#include "../include/WebServ.hpp"
+//#include "../include/WebServ.hpp"
 #include "../include/ConfigParser.hpp"
-#include "../include/ServerSocket.hpp"
+//#include "../include/ServerSocket.hpp"
 #include <arpa/inet.h>
 
 std::string toLower(const std::string& str) {
@@ -21,7 +35,7 @@ std::string toLower(const std::string& str) {
 
 bool isFile(const std::string& name) {
 	std::string	lowerName = toLower(name);
-	const char* extensions[] = {".jpg", ".jpeg", ".png", ".heic", ".txt"};
+	const char* extensions[] = {".jpg", ".jpeg", ".png", ".heic", ".txt", ".pdf", "cpp"};
 	int count = sizeof(extensions) / sizeof(extensions[0]);
 	for (int i = 0; i < count; i++) {
 		const char* ext = extensions[i];
@@ -30,6 +44,22 @@ bool isFile(const std::string& name) {
 			return true;
 	}
 	return false;
+}
+
+std::string createUniqueFileName(const std::string& base, std::set<std::string>& used) {
+	std::string name = base;
+	int counter = 1;
+	while (used.find(name) != used.end()) {
+		size_t dot = name.find_last_of(".");
+		std::string nameOnly = base.substr(0, dot);
+		std::string ext = base.substr(dot);
+		std::ostringstream oss;
+		oss << nameOnly << "_" << counter << ext;
+		name = oss.str();
+		counter++;
+	}
+	used.insert(name);
+	return name;
 }
 
 int main() {
@@ -63,22 +93,23 @@ int main() {
 	}
 
 	//open directory of test files
-	DIR* dir = opendir("./test");
+	DIR* dir = opendir("./test/test_samples");
 	if (!dir) {
 		std::cerr << "Failed to open directory\n";
 		return 1;
 	}
-
+	std::set<std::string> usedNames;
 	struct dirent* entry;
 	while ((entry = readdir(dir)) != NULL) {
-		std::string fileName = entry->d_name;
-		if (fileName == "." || fileName == "..")
+		std::string original = entry->d_name;
+		if (original == "." || original == "..")
 			continue;
-//f		std::cout << "Checking file: " << fileName << std::endl;
-		if (!isFile(fileName))
+		//f		std::cout << "Checking file: " << fileName << std::endl;
+		if (!isFile(original))
 			continue;
-		std::string filePath = "./test/" + fileName;
-
+		std::string filePath = "./test/test_samples/" + original;
+		
+		std::string fileName = createUniqueFileName(original, usedNames);
 		//send filename length
 		uint8_t	nameLen = fileName.size();
 		if (send(clientSocket, &nameLen, 1, 0) == -1){

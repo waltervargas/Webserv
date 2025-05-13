@@ -54,6 +54,8 @@ endef
 
 SRC_DIR = srcs
 INC_DIR = includes
+TEST_SRC_DIR = test
+TEST_CLIENTS = $(TEST_SRC_DIR)/test_client.cpp
 OBJ_DIR = objs
 
 SRCS = 	$(SRC_DIR)/WebServ.cpp \
