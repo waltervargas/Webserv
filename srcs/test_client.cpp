@@ -10,6 +10,7 @@
 #include "../include/WebServ.hpp"
 #include "../include/ConfigParser.hpp"
 #include "../include/ServerSocket.hpp"
+#include <arpa/inet.h>
 
 std::string toLower(const std::string& str) {
 	std::string result;
@@ -51,12 +52,15 @@ int main() {
 
 	//specify address
 	sockaddr_in serverAddress;
-	serverAddress.sin_family = AF_INET;	
-	serverAddress.sin_port = htons(port); 
-	serverAddress.sin_addr.s_addr = INADDR_ANY;
+	serverAddress.sin_family = AF_INET;
+	serverAddress.sin_port = htons(port);
+	serverAddress.sin_addr.s_addr = inet_addr("127.0.0.1");
 
 	//send connection request
-	connect(clientSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress));
+	if (connect(clientSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0) {
+		std::cerr << "❌ Client failed to connect\n";
+		return 1;
+	}
 
 	//open directory of test files
 	DIR* dir = opendir("./test");

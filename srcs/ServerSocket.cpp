@@ -7,6 +7,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h> //internet protocol family
 #include <arpa/inet.h>
+#include <netdb.h>
 
 
 ServerSocket::ServerSocket() : _fd(-1) {}
@@ -17,6 +18,25 @@ ServerSocket::ServerSocket() : _fd(-1) {}
 
 ServerSocket::~ServerSocket() {
 	closeSocket();
+}
+
+/*
+Checks if host is 0.0.0.0 or localhost or something else
+struct hostent is an old C-struct part of BSD sockets API
+*/
+bool checkHost(const std::string& host, in_addr& addr) {
+	//checks if valid IPv4 address (like 127.0.0.1 or 0.0.0.0)
+	if (inet_pton(AF_INET, host.c_str(), &addr) == 1)
+		return true;
+
+	//if not a valid IPv4, gets the local name and checks if empty or AF_INET
+	struct hostent* he = gethostbyname(host.c_str());
+	if (!he || he->h_addrtype != AF_INET)
+		return false;
+	
+	//if everything ok, it copies the address
+	std::memcpy(&addr, he->h_addr_list[0], sizeof(struct in_addr));
+	return true;
 }
 
 /*
@@ -48,12 +68,13 @@ bool	ServerSocket::init(int port, const std::string& host) {
 	if (host == "0.0.0.0")
 		serverAddress.sin_addr.s_addr = INADDR_ANY;
 	else {
-		serverAddress.sin_addr.s_addr = inet_addr(host.c_str());
-		if (serverAddress.sin_addr.s_addr == INADDR_NONE) {
-			std::cerr << "Invalid host address" << std::endl;
+		in_addr	addr; //if valid, it is filled thru checkHost
+		if (!checkHost(host, addr)) {
+			std::cerr << "❌ Invalid host address: " << host << std::endl;
 			closeSocket();
 			return false;
 		}
+		serverAddress.sin_addr = addr;
 	}
 	if (!safe_bind(_fd, serverAddress)) {
 		closeSocket();

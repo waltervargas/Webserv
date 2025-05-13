@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/15 17:26:45 by keramos-          #+#    #+#             */
-/*   Updated: 2025/05/12 17:07:42 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/13 07:05:18 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,19 +56,21 @@ int	init_webserv(std::string configPath) {
 		return 1;
 	}
 	std::vector<struct pollfd> fds;
-	std::vector<ServerSocket> serverSockets;
+	std::vector<ServerSocket*> serverSockets;
 	std::map<int, ServerSocket*> fdToSocket;
 	
 	for (size_t i = 0; i < servers.size(); ++i) {
 		const std::string& host = servers[i].host;
 		int port = servers[i].port;
 
-		ServerSocket	server;
-		if (!server.init(port, host)) {
+		ServerSocket*	server = new ServerSocket();
+		if (!server->init(port, host)) {
+			delete server;
 			std::cerr << "❌ Failed to initialise server on port: " << port << std::endl;
 			continue;
 		}
-		int	fd = server.getFD();
+		
+		int	fd = server->getFD();
 		struct pollfd pfd;
 		pfd.fd = fd;
 		pfd.events = POLLIN;
@@ -77,7 +79,7 @@ int	init_webserv(std::string configPath) {
 		
 		std::cout << "✅ Server is up and running on: " << host << ":" << port << std::endl;
 		serverSockets.push_back(server);
-		fdToSocket[fd] = &serverSockets.back();
+		fdToSocket[fd] = server;
 	}
 
 	std::map<int, ClientConnection*> clients;
@@ -127,6 +129,8 @@ int	init_webserv(std::string configPath) {
 		close(fds[i].fd);
 	for (std::map<int, ClientConnection*>::iterator it = clients.begin(); it != clients.end(); ++it)
 		delete it->second;
+	for (size_t i = 0; i < serverSockets.size(); ++i)
+		delete serverSockets[i];
 	return 0;
 }
 
@@ -139,9 +143,12 @@ int main(int ac, char **av) {
 
 	if (ac == 1)
 		configPath = "conf/default.conf";
-	else if (ac == 2)	std::vector<struct pollfd> fds;
-	std::vector<ServerSocket> serverSockets;
-	std::map<int, ServerSocket*> fdToSocket;
+	else if (ac == 2)
+		configPath = av[1];
+	else{
+		std::cout << "Too many arguments!!\nUsage: ./webserv [config_file]" << std::endl;
+		return (EXIT_FAILURE);
+	}
 	std::cout << "Using configuration file: " << configPath << std::endl;
 
 	return (init_webserv(configPath));
