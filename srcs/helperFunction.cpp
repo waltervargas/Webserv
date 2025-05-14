@@ -55,15 +55,3 @@ std::string	trim(std::string& s) {
 		return s;
 	}
 }
-
-/*void	parseBlock(std::ifstream& file, const std::string& type, ServerConfig& server) {
-	if (type == "server") {
-		parseServerBlock(file, server);
-		servers.puch_back(server);
-	}
-	else if (type == "location") {
-		LocationConfig location;
-		parseLocationBlock(file, location);
-		server.locations.push_back(location);
-	}
-}*/
