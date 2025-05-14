@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/15 17:26:45 by keramos-          #+#    #+#             */
-/*   Updated: 2025/05/14 12:44:14 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/14 17:13:57 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -108,6 +108,7 @@ int	init_webserv(std::string configPath) {
 					--i;
 				}
 			}
+			std::cout << std::endl;
 		}
 	}
 	//cleanup
