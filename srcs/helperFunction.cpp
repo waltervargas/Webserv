@@ -56,14 +56,12 @@ std::string	trim(std::string& s) {
 	}
 }
 
-/*void	parseBlock(std::ifstream& file, const std::string& type, ServerConfig& server) {
-	if (type == "server") {
-		parseServerBlock(file, server);
-		servers.puch_back(server);
-	}
-	else if (type == "location") {
-		LocationConfig location;
-		parseLocationBlock(file, location);
-		server.locations.push_back(location);
-	}
-}*/
+void	shutDownWebserv(std::vector<ServerSocket*>& serverSockets, std::map<int, ClientConnection*>& clients) {
+	for (size_t i = 0; i < serverSockets.size(); i++)
+		serverSockets[i]->closeSocket();
+	for (std::map<int, ClientConnection*>::iterator it = clients.begin(); it != clients.end(); ++it)
+		delete it->second;
+	for (size_t i = 0; i < serverSockets.size(); ++i)
+		delete serverSockets[i];
+	std::cout << "🧼 Webserv shut down cleanly.\n";
+}

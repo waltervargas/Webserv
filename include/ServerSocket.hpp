@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 13:53:08 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/09 13:53:09 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/12 16:42:10 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,7 @@ class ServerSocket {
     ServerSocket();
     ~ServerSocket();
 
-    bool	init(int port);
+    bool	init(int port, const std::string& host);
     int		acceptClient();
     void	closeSocket();
     int		getFD();
