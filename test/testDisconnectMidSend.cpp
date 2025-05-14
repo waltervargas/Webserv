@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/14 02:50:11 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/14 03:42:00 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/14 16:27:27 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,8 +18,8 @@
 #include <arpa/inet.h>
 
 int main() {
-	const std::string fileName = "test.txt";
-	std::string filePath = std::string("./test_samples/") + fileName;
+	const std::string fileName = "Pics2.jpg";
+	std::string filePath = std::string("./test/samples/") + fileName;
 	std::ifstream file(filePath.c_str(), std::ios::binary);
 	if (!file) {
 		std::cerr << "❌ Failed to open file.\n";
@@ -65,7 +65,6 @@ int main() {
 		send(clientSocket, buffer, chunk, 0);
 		sent += chunk;
 	}
-	
 	std::cout << "🚫 Disconnecting halfway through file...\n";
 	close(clientSocket);
 	return 0;

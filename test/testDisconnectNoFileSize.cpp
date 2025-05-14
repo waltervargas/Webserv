@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/14 02:50:11 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/14 03:09:48 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/14 16:28:39 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,7 @@ int main() {
 	}
 	std::cout << "✅ Connected to server.\n";
 	//open directory of test files or use the file path provided
-	std::string name = "test.txt";
+	std::string name = "./test/samples/test.txt";
 
 	uint8_t	len = name.length();
 	if (send(clientSocket, &len, 1, 0) == -1){

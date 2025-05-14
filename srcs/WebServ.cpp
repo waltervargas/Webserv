@@ -6,18 +6,11 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/15 17:26:45 by keramos-          #+#    #+#             */
-/*   Updated: 2025/05/13 12:14:00 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/14 12:44:14 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/WebServ.hpp"
-/*
-#include "../include/ServerSocket.hpp"
-#include "../include/ClientConnection.hpp"
-#include "../include/ConfigParser.hpp"
-#include <iostream>
-#include <fstream>
-*/
 
 int g_signal = -1;
 
@@ -25,17 +18,10 @@ void handleSignal(int signal) {
 	if (signal == SIGINT) {
 		std::cout << "\n🛑 Ctrl+C detected! Shutting down server...\n";
 
-		// Close the server socket if it's open
-		// for now this is for the socket, but later
-		// we will add a destructor to the server class
-		// to close all the sockets
 		if (g_signal != -1) {
-			close(g_signal); // close the server socket!
 			std::cout << "🔒 Server socket closed\n";
 		}
 		g_signal = 0;
-		std::cout << "👋 Bye bye!\n";
-		exit(0); // exit the program
 	}
 }
 
@@ -125,18 +111,15 @@ int	init_webserv(std::string configPath) {
 		}
 	}
 	//cleanup
-	for (size_t i = 0; i < fds.size(); i++)
-		close(fds[i].fd);
-	for (std::map<int, ClientConnection*>::iterator it = clients.begin(); it != clients.end(); ++it)
-		delete it->second;
-	for (size_t i = 0; i < serverSockets.size(); ++i)
-		delete serverSockets[i];
+	shutDownWebserv(serverSockets, clients);
+	std::cout << "👋 Bye bye!\n";
 	return 0;
 }
 
 int main(int ac, char **av) {
 
-	signal(SIGINT, handleSignal);
+	signal(SIGINT, handleSignal); //handle Contrl + C
+	signal(SIGTERM, handleSignal); //handle kill <pid>
 	std::string configPath;
 	std::cout << "		My Webserv in C++98" << std::endl;
 	std::cout << "--------------------------------------------------\n " << std::endl;

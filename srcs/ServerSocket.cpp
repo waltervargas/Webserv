@@ -12,14 +12,6 @@
 
 ServerSocket::ServerSocket() : _fd(-1) {}
 
-/*void	initialisePollFDs() {
-	fds.reserve(1024);
-}*/
-
-ServerSocket::~ServerSocket() {
-	closeSocket();
-}
-
 /*
 Checks if host is 0.0.0.0 or localhost or something else
 struct hostent is an old C-struct part of BSD sockets API
@@ -118,4 +110,8 @@ int		ServerSocket::getFD() {
 
 int		ServerSocket::getPort() {
 	return _port;
+}
+
+ServerSocket::~ServerSocket() {
+	closeSocket();
 }

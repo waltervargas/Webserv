@@ -55,3 +55,13 @@ std::string	trim(std::string& s) {
 		return s;
 	}
 }
+
+void	shutDownWebserv(std::vector<ServerSocket*>& serverSockets, std::map<int, ClientConnection*>& clients) {
+	for (size_t i = 0; i < serverSockets.size(); i++)
+		serverSockets[i]->closeSocket();
+	for (std::map<int, ClientConnection*>::iterator it = clients.begin(); it != clients.end(); ++it)
+		delete it->second;
+	for (size_t i = 0; i < serverSockets.size(); ++i)
+		delete serverSockets[i];
+	std::cout << "🧼 Webserv shut down cleanly.\n";
+}

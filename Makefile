@@ -54,14 +54,27 @@ endef
 
 SRC_DIR = srcs
 INC_DIR = includes
-TEST_SRC_DIR = test
-TEST_CLIENTS = $(TEST_SRC_DIR)/test_client.cpp
+TEST_DIR = test
 OBJ_DIR = objs
 
+SHARED = \
+	$(SRC_DIR)/ConfigParser.cpp \
+	$(SRC_DIR)/helperFunction.cpp \
+	$(SRC_DIR)/LocationConfig.cpp \
+	$(SRC_DIR)/ServerSocket.cpp \
+	$(SRC_DIR)/ClientConnection.cpp \
+	$(SRC_DIR)/ServerConfig.cpp
+
 SRCS = 	$(SRC_DIR)/WebServ.cpp \
-		$(SRC_DIR)/ServerSocket.cpp $(SRC_DIR)/ClientConnection.cpp $(SRC_DIR)/helperFunction.cpp \
-		$(SRC_DIR)/ConfigParser.cpp $(SRC_DIR)/LocationConfig.cpp $(SRC_DIR)/ServerConfig.cpp
-		
+		$(SHARED)
+
+TEST_SRC = \
+	$(TEST_DIR)/testClient.cpp \
+
+TEST_FULL = \
+	$(TEST_DIR)/testDisconnectMidSend.cpp \
+	$(TEST_DIR)/testDisconnectNoFileSize.cpp \
+	$(TEST_DIR)/testWrongLengthFile.cpp
 
 #patsubst is short for pattern substitution, works with items in multiple folders
 OBJS = $(notdir $(SRCS:.cpp=.o))
@@ -71,7 +84,7 @@ OBJS := $(patsubst %, $(OBJ_DIR)/%,$(OBJS))
 #                                  RULES                                       #
 # **************************************************************************** #
 
-all: Start $(NAME) client End
+all: Start $(NAME) End
 
 Start :
 	@if [ -f $(NAME) ]; then \
@@ -86,10 +99,6 @@ $(NAME): $(OBJS)
 	@$(CXX) $(CXXFLAGS) -o $@ $^ > /dev/null
 	@echo "${CHECK} Compiling utilities! ${RT}"
 
-client: $(SRC_DIR)/test_client.cpp $(SRC_DIR)/ConfigParser.cpp $(SRC_DIR)/helperFunction.cpp \
-	$(SRC_DIR)/LocationConfig.cpp $(SRC_DIR)/ServerConfig.cpp
-	@$(CXX) $(CXXFLAGS) -o $@ $^ > /dev/null
-
 create_obj_dir:
 	@mkdir -p $(OBJ_DIR)
 	@echo "${CHECK} Object directory created!"
@@ -97,6 +106,22 @@ create_obj_dir:
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | create_obj_dir
 	@mkdir -p $(dir $@)
 	@$(CXX) $(CXXFLAGS) -c $< -o $@ > /dev/null
+
+TEST_BINARIES = $(TEST_SRC:.cpp=)
+TEST_FULL_BIN = $(TEST_FULL:.cpp=)
+test: $(TEST_BINARIES)
+
+
+$(TEST_DIR)/%: $(TEST_DIR)/%.cpp $(SHARED)
+	@echo "Compiling $@..."
+	@$(CXX) $(CXXFLAGS) -I $(INC_DIR) -o $@ $^
+	@echo "${PINK}Test...${RT}";
+	@echo "${CHECK} successfully compiled!         🎉$(RT)";
+
+test_full: $(TEST_FULL_BIN)
+	@chmod +x ./test/tester.sh
+	@echo "🧪 Running test suite..."
+	@./test/tester.sh
 
 End :
 	@echo "${PINK}WebServ...${RT}";
@@ -113,7 +138,7 @@ clean:
 
 fclean: clean
 	@echo "${ORG}==> Full clean - Removing binaries...${RT}"
-	@$(RM) $(NAME) client
+	@$(RM) $(NAME) $(TEST_BINARIES) $(TEST_FULL_BIN)
 	@echo "${CHECK} Full cleanup complete          🧹"
 
 re: fclean all

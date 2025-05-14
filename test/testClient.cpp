@@ -1,61 +1,14 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   client_upload_text.cpp                             :+:      :+:    :+:   */
+/*   testClient.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/05/13 16:05:39 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/13 16:37:01 by kbolon           ###   ########.fr       */
+/*   Created: 2025/05/14 02:17:48 by kbolon            #+#    #+#             */
+/*   Updated: 2025/05/14 16:47:57 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-
-#include <cstring>
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <unistd.h>
-#include <netinet/in.h>
-#include <sys/socket.h> 
-#include <cctype> //for std::tolower
-#include <dirent.h> //to allow access to file directory
-//#include "../include/WebServ.hpp"
-#include "../include/ConfigParser.hpp"
-//#include "../include/ServerSocket.hpp"
-#include <arpa/inet.h>
-
-std::string toLower(const std::string& str) {
-	std::string result;
-	for (size_t i = 0; i < str.size(); ++i)
-		result += std::tolower(str[i]);
-	return result;
-}
-
-bool isFile(const std::string& name) {
-	std::string	lowerName = toLower(name);
-	const char* extensions[] = {".txt", ".pdf", ".cpp", ".c", ".h", ".sh", ".py", ".hpp", ".md"};
-	int count = sizeof(extensions) / sizeof(extensions[0]);
-	for (int i = 0; i < count; i++) {
-		const char* ext = extensions[i];
-		size_t	extLen = std::strlen(ext);
-		if (lowerName.size() >= extLen && lowerName.compare(lowerName.size() - extLen, extLen, ext) == 0)
-			return true;
-	}
-	return false;
-}
-
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   client_upload_images.cpp                           :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/05/13 16:14:38 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/13 16:35:02 by kbolon           ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 
 #include <cstring>
 #include <iostream>
@@ -68,9 +21,8 @@ bool isFile(const std::string& name) {
 #include <sys/socket.h> 
 #include <cctype> //for std::tolower
 #include <dirent.h> //to allow access to file directory
-//#include "../include/WebServ.hpp"
+#include <signal.h>
 #include "../include/ConfigParser.hpp"
-//#include "../include/ServerSocket.hpp"
 #include <arpa/inet.h>
 
 std::string toLower(const std::string& str) {
@@ -82,7 +34,7 @@ std::string toLower(const std::string& str) {
 
 bool isFile(const std::string& name) {
 	std::string	lowerName = toLower(name);
-	const char* extensions[] = {".jpg", ".jpeg", ".png", ".heic", ".txt", ".pdf", "cpp"};
+	const char* extensions[] = {".jpg", ".jpeg", ".png", ".heic", ".txt", ".pdf", ".cpp", ".doc"};
 	int count = sizeof(extensions) / sizeof(extensions[0]);
 	for (int i = 0; i < count; i++) {
 		const char* ext = extensions[i];
@@ -93,11 +45,15 @@ bool isFile(const std::string& name) {
 	return false;
 }
 
-std::string createUniqueFileName(const std::string& base, std::set<std::string>& used) {
+std::string createUniqueFileName(const std::string& base, const std::string& outputDir) {
 	std::string name = base;
 	int counter = 1;
-	while (used.find(name) != used.end()) {
-		size_t dot = name.find_last_of(".");
+	while (true) {
+		std::string	fullPath = outputDir + "/" + name;
+		if (access(fullPath.c_str(), F_OK) != 0) //if file doesn't exist, use this name
+			break;
+
+		size_t dot = base.find_last_of(".");
 		std::string nameOnly = base.substr(0, dot);
 		std::string ext = base.substr(dot);
 		std::ostringstream oss;
@@ -105,13 +61,13 @@ std::string createUniqueFileName(const std::string& base, std::set<std::string>&
 		name = oss.str();
 		counter++;
 	}
-	used.insert(name);
 	return name;
 }
 
-int main() {
+int main(int ac, char **av) {
 
 	ConfigParser	parser;
+	signal(SIGPIPE, SIG_IGN);
 
 	parser.parseFile("conf/default.conf");
 	const std::vector<ServerConfig>& servers = parser.getServers();
@@ -138,11 +94,14 @@ int main() {
 		std::cerr << "❌ Client failed to connect\n";
 		return 1;
 	}
-
-	//open directory of test files
-	DIR* dir = opendir("./test/test_samples");
+	std::cout << "✅ Connected to server.\n";
+	//open directory of test files or use the file path provided
+	std::string inputDir = "test/samples/";
+	if (ac == 2)
+		inputDir = av[1];
+	DIR* dir = opendir(inputDir.c_str());
 	if (!dir) {
-		std::cerr << "Failed to open directory\n";
+		std::cerr << "Failed to open directory: " << inputDir << std::endl;
 		return 1;
 	}
 	std::set<std::string> usedNames;
@@ -154,19 +113,19 @@ int main() {
 		//f		std::cout << "Checking file: " << fileName << std::endl;
 		if (!isFile(original))
 			continue;
-		std::string filePath = "./test/test_samples/" + original;
+		std::string filePath = inputDir + "/" + original;
 		
-		std::string fileName = createUniqueFileName(original, usedNames);
+		std::string fileName = createUniqueFileName(original,"test/output");
 		//send filename length
 		uint8_t	nameLen = fileName.size();
-		if (send(clientSocket, &nameLen, 1, 0) == -1){
+		if (send(clientSocket, &nameLen, 1, 0) <= 0){
 			std::cerr << "Failed to send filename length\n";
 			return 1;
 		}
 
 		//send filename
 		if (send(clientSocket, fileName.c_str(), nameLen, 0) == -1) {
-			std::cerr << "Failed to send filename\n";
+			std::cerr << "Failed to send filename: " << strerror(errno) << "\n";
 			return 1;
 		}
 
@@ -189,11 +148,14 @@ int main() {
 		while (file.read(buffer, sizeof(buffer))) {
 			send(clientSocket, buffer, sizeof(buffer), 0);
 		}
+		std::cout << "Sent chunk of " << file.gcount() << " bytes\n";
 		//gcount() Returns the number of characters extracted by the last 
 		//unformatted input operation performed on the object.
 		send(clientSocket, buffer, file.gcount(), 0);
+		std::cout << "Sent chunk of 2" << file.gcount() << " bytes\n";
 		file.close();
 		std::cout << "Sent: " << fileName << std::endl;
+		usleep(100000); //pause for 0.1 seconds
 	}
 	closedir(dir);
 	close(clientSocket);
