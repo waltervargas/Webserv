@@ -16,4 +16,10 @@ void	ServerConfig::print() const {
 	
 	for (size_t i = 0; i < locations.size(); ++i)
 		locations[i].print();
+
+	if (!raw.empty()) {
+		std::cout << "\n  RAW DIRECTIVES:\n";
+		for (std::map<std::string, std::string>::const_iterator it = raw.begin(); it != raw.end(); ++it)
+		std::cout << "    " << it->first << ": " << it->second << std::endl;
+	}
 }

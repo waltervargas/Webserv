@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 14:13:02 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/09 14:13:03 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/16 08:58:25 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,5 +29,11 @@ void	LocationConfig::print() const {
 
 	for (std::map<std::string, std::string>::const_iterator it = cgi_paths.begin(); it != cgi_paths.end(); ++it) {
 		std::cout << "cgi[" << it->first << "] = " << it->second << std::endl;
+	}
+	
+	if (!raw.empty()) {
+		std::cout << "\n  RAW DIRECTIVES:\n";
+		for (std::map<std::string, std::string>::const_iterator it = raw.begin(); it != raw.end(); ++it)
+		std::cout << "    " << it->first << ": " << it->second << std::endl;
 	}
 }

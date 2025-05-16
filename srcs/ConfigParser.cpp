@@ -92,6 +92,7 @@ void ConfigParser::parseServerBlock(std::ifstream& file, ServerConfig& server) {
 		}	
 		std::string key, value;
 		if (parseKeyValue(line, key, value)) {
+			server.raw[key] = value; //stores all items in the block to ensure we parse it
 			if (value.empty()) {
 				std::cerr << "⚠️ value is empty for " << key << "skipping line\n";
 				continue;
@@ -148,6 +149,7 @@ void ConfigParser::parseLocationBlock(std::ifstream& file, LocationConfig& locat
 		}
 		std::string key, value;
 		if (parseKeyValue(line, key, value)) {
+			location.raw[key] = value;
 			if (key == "root") {
 				location.root = value;
 			}

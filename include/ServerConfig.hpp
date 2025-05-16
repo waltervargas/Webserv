@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 13:53:17 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/09 14:09:43 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/16 08:58:58 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,12 +18,13 @@
 #include <map>
 
 struct	ServerConfig {
+	std::map<std::string, std::string> raw; //stores everything in the block
 	int							port;
 	std::string					host;
 	std::string					server_name;
 	std::string					root;
 	std::string					index;
-	size_t						client_max_body_size;
+	long						client_max_body_size;
 	std::map<int, std::string>	error_pages; //error code and path
 	std::vector<LocationConfig>	locations;
 
