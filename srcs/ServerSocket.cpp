@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   ServerSocket.cpp                                   :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/16 17:19:37 by kbolon            #+#    #+#             */
+/*   Updated: 2025/05/18 11:17:59 by kbolon           ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "../include/ServerSocket.hpp"
 #include <iostream>
 #include <unistd.h> //close
@@ -11,6 +23,10 @@
 
 
 ServerSocket::ServerSocket() : _fd(-1) {}
+
+ServerSocket::~ServerSocket() {
+	closeSocket();
+}
 
 /*
 Checks if host is 0.0.0.0 or localhost or something else
@@ -32,22 +48,15 @@ bool checkHost(const std::string& host, in_addr& addr) {
 }
 
 /*
-htons (Host To Network Short): converts machine byte to network byte order
-Basically, you’ll want to convert the numbers to Network Byte Order before 
-they go out on the wire, and convert them to Host Byte Order as they come in off the wire.
-	
-INADDR_ANY is used when we don't want to bind our socket to any particular
-IP and instead make it listen to all IPs available
-
-Bind the socket, tell it to listen to the socket referred to by serverSocket_fd.
-Then we accept the connection request that is received on the socket 
-the app is listening to
+htons converts host byte order to network byte order (for port).
+INADDR_ANY binds to all available interfaces.
+fcntl sets the socket to non-blocking mode.
+We bind, listen, and accept incoming connections on this socket.
 */
 bool	ServerSocket::init(int port, const std::string& host) {
 	_fd = safe_socket(AF_INET, SOCK_STREAM, 0);
 	if (_fd == -1) return false;
 
-	//make it non-block (fcntl sets fd to nonblock)
 	if (fcntl(_fd, F_SETFL, O_NONBLOCK) == -1) {
 		std::cerr << "Failed to set FD to non-blocking: " << std::strerror(errno) << std::endl;
 		close(_fd);
@@ -72,14 +81,19 @@ bool	ServerSocket::init(int port, const std::string& host) {
 		closeSocket();
 		return false;
 	}
-
 	if (!safe_listen(_fd, 20)) {
 		closeSocket();
 		return false;
 	}
-//	std::ostringstream ss;
-//	ss << "\nServer is listening on " << host << ":" << port;
 	return true;
+}
+
+void  ServerSocket::setConfig(const ServerConfig& config) {
+	_config = config;
+}
+
+const ServerConfig& ServerSocket::getConfig() const {
+	return _config;
 }
 
 int		ServerSocket::acceptClient() {
@@ -106,12 +120,4 @@ void	ServerSocket::closeSocket() {
 
 int		ServerSocket::getFD() {
 	return _fd;
-}
-
-int		ServerSocket::getPort() {
-	return _port;
-}
-
-ServerSocket::~ServerSocket() {
-	closeSocket();
 }

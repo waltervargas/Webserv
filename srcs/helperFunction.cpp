@@ -1,3 +1,14 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   helperFunction.cpp                                 :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/16 17:19:59 by kbolon            #+#    #+#             */
+/*   Updated: 2025/05/16 18:12:36 by kbolon           ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 #include "../include/WebServ.hpp"
 #include <sys/socket.h>
@@ -54,6 +65,29 @@ std::string	trim(std::string& s) {
 		s = s.substr(start, end - start + 1);
 		return s;
 	}
+}
+
+std::string	cleanValue(std::string s) {
+	//look for '//' preceded by ' ' or ';'
+	size_t commentPos = std::string::npos;
+	for (size_t i = 2; i < s.length(); ++i) {
+		if (s[i] == '/' && s[i - 1] == '/' && (s[i - 2] == ' ' || s[i - 2] == ';')) {
+			commentPos = i - 1;
+			break;
+		}
+	}
+	//use '#' if no comment '//' found
+	size_t hashPos = s.find('#');
+	if (hashPos != std::string::npos && (commentPos == std::string::npos || hashPos < commentPos))
+		commentPos = hashPos;
+	//remove comment
+	if (commentPos != std::string::npos)
+		s = s.substr(0, commentPos);
+	//remove last semicolon
+	size_t	semicolon = s.find_last_of(";");
+	if (semicolon != std::string::npos)
+		s = s.substr(0, semicolon);
+	return trim(s);
 }
 
 void	shutDownWebserv(std::vector<ServerSocket*>& serverSockets, std::map<int, ClientConnection*>& clients) {

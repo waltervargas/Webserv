@@ -116,7 +116,7 @@ $(TEST_DIR)/%: $(TEST_DIR)/%.cpp $(SHARED)
 	@echo "Compiling $@..."
 	@$(CXX) $(CXXFLAGS) -I $(INC_DIR) -o $@ $^
 	@echo "${PINK}Test...${RT}";
-	@echo "${CHECK} successfully compiled!         🎉$(RT)";
+	@echo "${CHECK} successfully compiled! 📚$(RT)";
 
 test_full: $(TEST_FULL_BIN)
 	@chmod +x ./test/tester.sh

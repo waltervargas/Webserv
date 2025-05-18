@@ -1,15 +1,24 @@
-# Webserv
+# 🌐 Webserv – Lightweight HTTP Server in C++98
 
-This project is a custom HTTP server implemented in C++98. It is designed to handle multiple simultaneous connections using non-blocking I/O and `poll()`, mimicking behavior similar to lightweight servers like NGINX.
+Welcome to **Webserv**, a custom-built HTTP server implemented in C++98. This project follows NGINX-style configuration and supports multiple virtual servers, route-based logic, CGI execution, and file uploads — all with a clean non-blocking architecture using `poll()`.
 
-## 🚀 Features
+---
 
-- Non-blocking server with `poll()`
-- HTTP/1.1 support: GET, POST, DELETE
-- Configurable via custom configuration files
-- Static file serving (HTML, CSS, JS, images)
-- File upload support
-- CGI execution (e.g., PHP, Python scripts)
-- Custom error pages
-- Compatible with modern web browsers
+## ✨ Features
 
+- 🔧 **NGINX-inspired configuration** (custom `.conf` format)
+- 🔁 **Multiple server blocks** with `listen`, `host`, `server_name`
+- 📁 **Location blocks** with support for:
+  - `root`, `index`
+  - `autoindex on|off`
+  - Allowed methods (`GET`, `POST`, `DELETE`)
+  - `redirect` directives
+  - `upload_path` for file uploads
+  - `cgi` handlers for `.php`, `.py`, `.rb`, etc.
+- 📦 **Static file serving**
+- 🚫 **Custom error pages** (`404`, `500`, ...)
+- 📤 **File upload support**
+- ⚙️ **Non-blocking I/O** with a single `poll()` loop
+- 🧪 Compatible with **browsers, curl, telnet, and testers**
+
+---

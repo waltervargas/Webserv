@@ -5,12 +5,13 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/04/15 17:26:45 by keramos-          #+#    #+#             */
-/*   Updated: 2025/05/16 09:02:26 by kbolon           ###   ########.fr       */
+/*   Created: 2025/05/16 17:19:29 by kbolon            #+#    #+#             */
+/*   Updated: 2025/05/18 11:21:22 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/WebServ.hpp"
+#include "../include/ConfigParser.hpp"
 
 int g_signal = -1;
 
@@ -22,6 +23,39 @@ void handleSignal(int signal) {
 			std::cout << "🔒 Server socket closed\n";
 		}
 		g_signal = 0;
+	}
+}
+
+void	handleNewClient(ServerSocket* server, std::vector<pollfd> &fds, std::map<int, ClientConnection*>& clients) {
+	int	client_fd = server->acceptClient();
+	if (client_fd == -1) {
+		std::cerr << "❌ Failed to accept client\n";
+		return;
+	}
+	ClientConnection* client = new ClientConnection(client_fd);
+	struct pollfd client_pfd;
+	client_pfd.fd = client_fd;
+	client_pfd.events = POLLIN;
+	client_pfd.revents = 0;
+	fds.push_back(client_pfd);
+	clients[client_fd] = client;
+	std::cout << "A new client has been connected: " << client_fd << std::endl;
+}
+
+void	handleExistingClient(int fd, std::vector<pollfd> &fds, std::map<int, ClientConnection*>& clients, size_t& i) {
+	std::map<int, ClientConnection*>::iterator it = clients.find(fd);
+	if (it == clients.end()) {
+		std::cerr << "❌ Received an event for an unknow fd: " << fd << std::endl;
+		return;
+	}
+	ClientConnection* client = it->second;
+	if (!client->receiveMessage()) {
+		std::cerr << "Client has disconnected: " << fd << "👋\n";
+		close(fd);
+		delete client;
+		clients.erase(it);
+		fds.erase(fds.begin() + i);
+		--i;
 	}
 }
 
@@ -55,7 +89,7 @@ int	init_webserv(std::string configPath) {
 			std::cerr << "❌ Failed to initialise server on port: " << port << std::endl;
 			continue;
 		}
-		
+		server->setConfig(servers[i]);
 		int	fd = server->getFD();
 		struct pollfd pfd;
 		pfd.fd = fd;
@@ -63,7 +97,9 @@ int	init_webserv(std::string configPath) {
 		pfd.revents = 0;
 		fds.push_back(pfd);
 		
-		std::cout << "✅ Server is up and running on: " << host << ":" << port << std::endl;
+		std::cout << "\n======================" << std::endl;
+		std::cout << "✅ Server is up at http://: " << host << ":" << port << std::endl;
+		server->getConfig().print();
 		serverSockets.push_back(server);
 		fdToSocket[fd] = server;
 	}
@@ -71,47 +107,40 @@ int	init_webserv(std::string configPath) {
 	std::map<int, ClientConnection*> clients;
 
 	while (g_signal != 0) {
+		for (size_t i = 0; i < fds.size(); ++i) {
+			int fd = fds[i].fd;
+			bool known = fdToSocket.count(fd) || clients.count(fd);
+			if (fd <0 || !known) {
+				std::cerr << "🧽 Removing unknown or invalid fd: " << fd << std::endl;
+				close(fd);
+				fds.erase(fds.begin() + i);
+				--i;
+			}
+		}
+		//reset revents before poll
+		for (size_t i = 0; i < fds.size(); ++i)
+			fds[i].revents = 0;
+		//safe to call poll()
 		int openAndReadyFDs = poll(&fds[0], fds.size(), -1);
-		if (openAndReadyFDs == -1) {
-			std::cerr << "❌ Failed in poll() FD checks\n";
+		if (openAndReadyFDs < 0) {
 			break;
 		}
+
 		for (size_t i = 0; i < fds.size(); ++i) {
 			if (fds[i].revents & POLLIN) {
-				//New client?
-				if (fdToSocket.count(fds[i].fd)) {
-					int client_fd = fdToSocket[fds[i].fd]->acceptClient();
-					if (client_fd == -1) {
-						std::cerr << "❌ Failed to accept client\n";
-						continue;
-					}
-					ClientConnection* client = new ClientConnection(client_fd);
-					struct pollfd client_pfd;
-					client_pfd.fd = client_fd;
-					client_pfd.events = POLLIN;
-					client_pfd.revents = 0;
-					fds.push_back(client_pfd);
-					clients[client_fd] = client;
-					std::cout << "A new client has been connected: " << client_fd << std::endl;
-				}
-			}
-			//existing client
-			else {
-				int client_fd = fds[i].fd;
-				ClientConnection* client = clients[client_fd];
-				if (!client->receiveMessage()) {
-					std::cerr << "Client has disconnected from server 👋\n";
-					close(client_fd);
-					delete client;
-					clients.erase(client_fd);
+				if (fdToSocket.count(fds[i].fd))
+					handleNewClient(fdToSocket[fds[i].fd], fds, clients);
+				else if (clients.count(fds[i].fd))
+					handleExistingClient(fds[i].fd, fds, clients, i);
+				else {
+					std::cerr << "⚠️ POLLIN on unknown fd " << fds[i].fd << std::endl;
+					close(fds[i].fd);
 					fds.erase(fds.begin() + i);
 					--i;
 				}
 			}
-			std::cout << std::endl;
 		}
 	}
-	//cleanup
 	shutDownWebserv(serverSockets, clients);
 	std::cout << "👋 Bye bye!\n";
 	return 0;

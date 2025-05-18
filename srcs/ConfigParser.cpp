@@ -1,3 +1,16 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   ConfigParser.cpp                                   :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/16 17:20:05 by kbolon            #+#    #+#             */
+/*   Updated: 2025/05/18 13:08:24 by kbolon           ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "../include/ConfigParser.hpp"
 #include "../include/WebServ.hpp"
 #include <iostream>
 #include <fstream>
@@ -8,16 +21,13 @@ ConfigParser::ConfigParser() {}
 
 ConfigParser::~ConfigParser() {}
 
-
 static bool	parseKeyValue(const std::string& line, std::string& key, std::string& value) {
 	std::istringstream iss(line);
 	if (!(iss >> key))
 		return false;
 	std::getline(iss, value);
 	trim(value);
-	if (!value.empty() && value[value.size() - 1] == ';')
-		value = value.substr(0, value.size() - 1);
-	trim(value);
+	value = cleanValue(value);
 	return !value.empty(); //only return true if a value was found/parsed
 }
 
@@ -33,7 +43,7 @@ std::vector<std::string> line_splitter(const std::string& line) {
 void	ConfigParser::parseFile(const std::string& path) {
 	std::ifstream file(path.c_str());
 	if (!file.is_open()) {
-		throw std::runtime_error("❌ Error: Could not open config file: " + path);
+		throw std::runtime_error("Could not open config file: " + path);
 	}
 	std::string line;
 	while (std::getline(file, line)) {
@@ -41,20 +51,16 @@ void	ConfigParser::parseFile(const std::string& path) {
 		if (line.empty() || line[0] == '#') {
 			continue;
 		}
-		if (line.find("server") == 0) {
+		//check for 'server{' or 'server {'
+		if (line.find("server") == 0 && line.find("{") != std::string::npos) {
 			std::istringstream iss(line);
-			std::string	type, brace;
-			iss >> type >> brace;
-
-			if (type == "server" && brace == "{") {
-				ServerConfig	server;
-				parseServerBlock(file, server);
-				servers.push_back(server);
-				continue;
-			}
-			else
-				std::cerr << "⚠️ couldn't read server block\n";
-		}	
+			ServerConfig	server;
+			parseServerBlock(file, server);
+			servers.push_back(server);
+			continue;
+		}
+		else if (line.find("server") == 0)
+			error("Couldn't read server block\n");	
 	}
 }
 
@@ -72,61 +78,52 @@ void ConfigParser::parseServerBlock(std::ifstream& file, ServerConfig& server) {
 		}
 		if (line == "}") {
 			depth--;
-			if (depth == 0) return;
+			if (depth == 0) {
+				applyDefaults(server);
+				return;
+			}
 			continue;
 		}
-		if (line.find("location") == 0) {
+		//checks if location and '{' are on same line, but rejects 'location\{' or 'location\{'
+		//like nginx
+		if (line.find("location") == 0 && line.find("{") != std::string::npos) {
 			std::istringstream iss(line);
-			std::string	type, path, brace;
-			iss >> type >> path >> brace;
+			std::string	type, path;
+			iss >> type >> path;
 
-			if (type == "location" && brace == "{") {
+			if (!path.empty()) {
 				LocationConfig	location;
 				location.path = path; //save URL path for location block (upload etc)
 				parseLocationBlock(file, location);
+				applyInheritance(location, server);
+				for (size_t i = 0; i < server.locations.size(); ++i) {
+					if (server.locations[i].path == location.path) {
+						error("Duplicate location block for path: " + location.path);
+						return;
+					}
+				}
 				server.locations.push_back(location);
 				continue;
 			}
 			else
-				std::cerr << "⚠️ couldn't read location block\n";
-		}	
+				error( "Missing location path\n");
+		}
+		else if (line.find("location") == 0)
+			error("couldn't read location block (possibly missing '{')\n");
 		std::string key, value;
 		if (parseKeyValue(line, key, value)) {
 			server.raw[key] = value; //stores all items in the block to ensure we parse it
 			if (value.empty()) {
-				std::cerr << "⚠️ value is empty for " << key << "skipping line\n";
+				error("Value is empty for " + key + ", skipping line\n");
 				continue;
 			}
-			if (key == "listen") {
-				server.port = std::atoi(value.c_str());
-			}
-			else if (key == "host") {
-				server.host = value;
-			}
-			else if (key == "server_name") {
-				server.server_name = value; 
-			}
-			else if (key == "root") {
-				server.root = value;
-			}
-			else if (key == "index") {
-				server.index = value;
-			}
-			else if (key == "client_max_body_size") {
-				server.client_max_body_size = std::atol(value.c_str());
-			}
-			else if (key == "error_page") {
-				std::istringstream iss(value);
-				int	code;
-				std::string	path;
-				if (iss >> code >> path) {
-					server.error_pages[code] = path;
-				}
-				else
-					std::cerr << "⚠️ Couldn't read error page\n";
-			}
+			parseServerDirective(server, key, value);
 		}
 	}
+	if (server.port == 0)
+		throw std::runtime_error("❌ Missing or invalid 'listen' directive in server block\n");
+	if (server.host.empty())
+		error("Missing 'host' directive in server block\n");
 }
 
 void ConfigParser::parseLocationBlock(std::ifstream& file, LocationConfig& location) {
@@ -150,36 +147,7 @@ void ConfigParser::parseLocationBlock(std::ifstream& file, LocationConfig& locat
 		std::string key, value;
 		if (parseKeyValue(line, key, value)) {
 			location.raw[key] = value;
-			if (key == "root") {
-				location.root = value;
-			}
-			else if (key == "index") {
-				location.index = value;
-			}
-			else if (key == "redirect") {
-				location.redirect = value;
-			}
-			else if (key == "autoindex") {
-				if (value == "on")
-					location.autoindex = true;
-			}
-			else if (key == "allowed_methods" || key == "methods") {
-				location.methods = line_splitter(value);
-			}
-			else if (key == "upload_path") {
-				location.upload_path = value;
-			}
-			else if (key == "cgi_path") {
-				location.cgi_paths["default"] = value;
-			}
-			else if (key == "cgi") {
-				std::vector<std::string> parts = line_splitter(value);
-				if (parts.size() == 2) {
-					location.cgi_paths[parts[0]] = parts[1];
-				}
-				else
-					std::cerr << "⚠️ Couldn't read cgi directives\n";
-			}
+			parseLocationDirective(location, key, value);
 		}
 	}
 }
@@ -190,8 +158,78 @@ const	std::vector<ServerConfig>& ConfigParser::getServers() const {
 
 void	ConfigParser::print() const {
 	for (size_t i = 0; i < servers.size(); i++) {
-		std::cout << "\n SERVER " << i + 1 << std::endl;
+		std::cout << "\n🌸 SERVER " << i + 1 << std::endl;
 		servers[i].print();
 	}
 }
 
+void	ConfigParser::parseServerDirective(ServerConfig& server, const std::string& key, const std::string& value) {
+	if (key == "listen")
+		server.port = std::atoi(value.c_str());
+	else if (key == "port")
+		error ("Unknown directive in server block: '" + key + "'\n");
+	else if (key == "host")
+		server.host = value;
+	else if (key == "server_name")
+		server.server_name = value; 
+	else if (key == "root")
+		server.root = value;
+	else if (key == "index")
+		server.index = value;
+	else if (key == "client_max_body_size")
+		server.client_max_body_size = std::atol(value.c_str());
+	else if (key == "error_page") {
+		std::istringstream iss(value);
+		int	code;
+		std::string	path;
+		if (iss >> code >> path)
+			server.error_pages[code] = path;
+		else
+			error("Couldn't read error page\n");
+	}
+	else
+		error("Unknown directive in server block: '" + key + "'\n");
+}
+
+void	ConfigParser::parseLocationDirective(LocationConfig& location, const std::string& key, const std::string& value) {
+	if (key == "root") {
+		location.root = value;
+		location.root_set = true;
+	}
+	else if (key == "index") {
+		location.index = value;
+		location.index_set = true;
+	}
+	else if (key == "redirect")
+		location.redirect = value;
+	else if (key == "autoindex") {
+		if (value == "on")
+			location.autoindex = true;
+	}
+	else if (key == "allowed_methods" || key == "methods")
+		location.methods = line_splitter(value);
+	else if (key == "upload_path")
+		location.upload_path = value;
+	else if (key == "cgi_path")
+		location.cgi_paths["default"] = value;
+	else if (key == "cgi") {
+		std::vector<std::string> parts = line_splitter(value);
+		if (parts.size() == 2)
+			location.cgi_paths[parts[0]] = parts[1];
+		else
+			error("Invalid CGI mapping: expected two arguments\n");
+	}
+	else
+		error("Unknown directive in location block: '" + key + "'\n");
+}
+
+void	ConfigParser::applyInheritance(LocationConfig& location, const ServerConfig& server) {
+	if (!location.root_set)
+		location.root = server.root;
+	if (!location.index_set)
+		location.index = server.index;
+}
+
+void	ConfigParser::error(const std::string& msg) const {
+	std::cerr << "⚠️ ConfigParser: " << msg << std::endl;
+}

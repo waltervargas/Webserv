@@ -6,17 +6,18 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 14:13:02 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/16 08:58:25 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/18 11:45:16 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/LocationConfig.hpp"
+#include "../include/ConfigParser.hpp"
 #include <iostream>
 
-LocationConfig::LocationConfig() : autoindex(false) {}
+LocationConfig::LocationConfig() : autoindex(false), root_set(false), index_set(false) {}
 
 void	LocationConfig::print() const {
 	std::cout << "\nLOCATION:\n";
+	std::cout << "path: " << path << std::endl;
 	std::cout << "root: " << root << std::endl;
 	std::cout << "index: " << index << std::endl;
 	std::cout << "redirect: " << redirect << std::endl;
@@ -36,4 +37,5 @@ void	LocationConfig::print() const {
 		for (std::map<std::string, std::string>::const_iterator it = raw.begin(); it != raw.end(); ++it)
 		std::cout << "    " << it->first << ": " << it->second << std::endl;
 	}
+	std::cout << std::endl;
 }
