@@ -63,7 +63,9 @@ SHARED = \
 	$(SRC_DIR)/LocationConfig.cpp \
 	$(SRC_DIR)/ServerSocket.cpp \
 	$(SRC_DIR)/ClientConnection.cpp \
-	$(SRC_DIR)/ServerConfig.cpp
+	$(SRC_DIR)/ServerConfig.cpp \
+	$(SRC_DIR)/Request.cpp \
+	$(SRC_DIR)/Response.cpp
 
 SRCS = 	$(SRC_DIR)/WebServ.cpp \
 		$(SHARED)

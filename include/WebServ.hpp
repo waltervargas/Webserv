@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/15 17:27:43 by keramos-          #+#    #+#             */
-/*   Updated: 2025/05/18 11:19:07 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/18 17:34:03 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,10 @@
 #include <csignal>
 #include "ClientConnection.hpp"
 #include "ServerSocket.hpp"
+#include "ServerConfig.hpp"
+#include "ConfigParser.hpp"
+#include "Request.hpp"
+#include "Response.hpp"
 
 //# define PORT 8081
 # define BUFFER_SIZE 4096
@@ -44,5 +48,7 @@ int			safe_socket(int domain, int type, int protocol);
 bool		safe_bind(int fd, sockaddr_in & addr);
 bool		safe_listen(int socket, int backlog);
 void		shutDownWebserv(std::vector<ServerSocket*>& serverSockets, std::map<int, ClientConnection*>& clients);
-
+void 		handleUpload(const std::string &request, int client_fd, const ServerConfig &config);
+void 		serveStaticFile(std::string path, int client_fd, const ServerConfig &config);
+std::string getContentType(const std::string& path);
 
