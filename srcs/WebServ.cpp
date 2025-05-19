@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:19:29 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/18 18:30:52 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/19 16:51:33 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@ void	handleNewClient(ServerSocket* server, std::vector<pollfd> &fds, std::map<in
 void	handleExistingClient(int fd, std::vector<pollfd> &fds, std::map<int, ClientConnection*>& clients, size_t& i, const ServerConfig& config) {
 	std::map<int, ClientConnection*>::iterator it = clients.find(fd);
 	if (it == clients.end()) {
-		std::cerr << "❌ Received an event for an unknow fd: " << fd << std::endl;
+		std::cerr << "❌ Received an event for an unknown fd: " << fd << std::endl;
 		return;
 	}
 	ClientConnection* client = it->second;
@@ -65,12 +65,16 @@ void	handleExistingClient(int fd, std::vector<pollfd> &fds, std::map<int, Client
 	
 	std::cout << "📨 " << method << " " << path << std::endl;
 	if (method == "POST" && path == "/upload") {
-		std::cout << "handing upload\n" << std::endl;
+		std::cout << "handling upload\n" << std::endl;
 		handleUpload(request, fd, config);
 	}
-	else
-		serveStaticFile(path, fd, config);
-
+	else {
+		std::string interpreter = getInterpreter(path, config);
+		if (!interpreter.empty())
+			handleCgi(req, fd, config, interpreter);
+		else
+			serveStaticFile(path, fd, config);
+	}
 	close(fd);
 	delete client;
 	clients.erase(it);

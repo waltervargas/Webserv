@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/14 02:34:47 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/18 18:30:23 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/19 15:26:39 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 #include <cstring> //strerror
 #include <sys/socket.h> //internet protocol family
 #include <string>
+#include <vector>
 #include <stdint.h>
 #include <fstream>
 #include <fcntl.h>
@@ -53,75 +54,86 @@ ClientConnection::~ClientConnection() {
 -exits cleanly after each transfer
 */
 std::string ClientConnection::recvFullRequest(int client_fd) {
-	std::string request;
+	//switched to vector to handle images and pdfs
+	std::vector<char> request;
 	char buffer[4096];
 	int bytes = 0;
 	size_t totalContentLength = 0;
 	bool headersParsed = false;
 	size_t headerEnd = std::string::npos;
-	int	totalWait = 0;
-	const int pollStep = 300; //ms
-	const int maxWait = 3000; //3 seconds
 
 	// First, receive the headers
-	while (totalWait < maxWait) {
+	while (true) {
 		struct pollfd pfd;
 		pfd.fd = client_fd;
 		pfd.events = POLLIN;
 
-		int ready = poll(&pfd, 1, pollStep);
-		if (ready > 0 && (pfd.revents & POLLIN)) {
+		int ready = poll(&pfd, 1, 300);
+		if (ready < 0) {
+			std::cerr << "⚠️ Poll failed: " << strerror(errno) << std::endl;
+			break;
+		}
+		else if (ready == 0) {
+			//timeout:  wait again unless finished
+			if (headersParsed && totalContentLength > 0) {
+				// Calculate how much of the body we've already received
+				std::string reqStr(request.begin(), request.end());
+				size_t bodyStart = headerEnd + 4; // Skip the \r\n\r\n
+				size_t bodyReceived = (reqStr.size() - bodyStart);
+				if (bodyReceived >= totalContentLength) {
+					break; //full request body received
+				}
+				continue;
+			}
+			continue; //no data, keep polling
+		}
+		else if (pfd.revents & POLLIN) {
 			bytes = recv(client_fd, buffer, sizeof(buffer), 0);
 			if (bytes <= 0) {
-				std::cerr << "⚠️ Connection closed or recv failed during recvFullRequest\n";
-				break;
+				if (request.empty())
+					return "";
+				else {
+					std::cerr << "⚠️ Connection closed or recv failed during recvFullRequest\n";
+					break;
+				}
 			}
-			request.append(buffer, bytes);
+			request.insert(request.end(), buffer, buffer + bytes);
 		}
-		totalWait += pollStep;
+
 		if (!headersParsed) {
-			headerEnd = request.find("\r\n\r\n");
+			std::string reqStr(request.begin(), request.end());
+			headerEnd = reqStr.find("\r\n\r\n");
 			if (headerEnd != std::string::npos) {
 				headersParsed = true;
 				// Found end of headers, check for Content-Length
-				size_t contentLengthPos = request.find("Content-Length:");
+				size_t contentLengthPos = reqStr.find("Content-Length:");
 				if (contentLengthPos != std::string::npos) {
 					size_t valueStart = contentLengthPos + 15; // Length of "Content-Length:"
-					size_t valueEnd = request.find("\r\n", valueStart);
-					std::string lengthStr = request.substr(valueStart, valueEnd - valueStart);
+					size_t valueEnd = reqStr.find("\r\n", valueStart);
+					std::string lengthStr = reqStr.substr(valueStart, valueEnd - valueStart);
 					totalContentLength = atoi(lengthStr.c_str());
 					if (totalContentLength > 0)
 						std::cout << "Content-Length in request: " << totalContentLength << " bytes" << std::endl;
 				}
+				if (totalContentLength == 0)
+					break;
 			}
 		}
-		// Parse headers if not already parsed
-		// Once headers are parsed, wait until full body is read
-		if (headersParsed && totalContentLength > 0) {
-			// Calculate how much of the body we've already received
-			size_t bodyStart = headerEnd + 4; // Skip the \r\n\r\n
-			size_t bodyReceived = (request.size() - bodyStart);
-			if (bodyReceived >= totalContentLength) {
-				break; //full request body received
-			}
-		}
-		if (headersParsed && totalContentLength == 0)
-			break;
 	}
-
-	// Final validation
 	if (!headersParsed) {
 		std::cerr << "❌ Failed to parse headers\n";
 		return "";
 	}
+	//checks if all data received
 	if (totalContentLength > 0) {
+		std::string reqStr(request.begin(), request.end());
 		size_t bodyStart = headerEnd + 4;
-		size_t bodyReceived = request.size() - bodyStart;
+		size_t bodyReceived = reqStr.size() - bodyStart;
 		if (bodyReceived < totalContentLength) {
 			std::cerr << "❌ Incomplete body (received " << request.size() - bodyStart
 				<< " of " << totalContentLength << " bytes)\n";
 			return "";
 		}
 	}
-	return request;
+	return std::string(request.begin(), request.end());
 }
