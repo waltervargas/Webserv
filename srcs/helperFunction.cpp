@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:19:59 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/18 17:19:34 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/20 19:31:09 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -117,54 +117,16 @@ void serveStaticFile(std::string path, int client_fd, const ServerConfig &config
 	std::string fullPath = config.root + path;
 	std::ifstream file(fullPath.c_str());
 	if (!file.is_open()) {
-		std::string errorPath = config.root + "/error/404.html";
-		std::ifstream errorFile(errorPath.c_str());
-
-		if (errorFile.is_open()) {
-			std::string errorBody((std::istreambuf_iterator<char>(errorFile)), std::istreambuf_iterator<char>());
-			errorFile.close();
-
-			std::ostringstream oss;
-			oss << "HTTP/1.1 404 Not Found\r\n";
-			oss << "Content-Type: text/html; charset=UTF-8\r\n";
-			oss << "Content-Length: " << errorBody.size() << "\r\n";
-			oss << "Connection: close\r\n\r\n";
-			oss << errorBody;
-			std::string response = oss.str();
-			ssize_t sent = send(client_fd, response.c_str(), response.size(), 0);
-			if (sent != (ssize_t)response.size()) {
-				std::cerr << "❌ Failed to send complete error response: " << sent << " of " << response.size() << " bytes" << std::endl;
-			}
-		} else {
-			std::string fallback =
-				"HTTP/1.1 404 Not Found\r\n"
-				"Content-Type: text/plain; charset=UTF-8\r\n"
-				"Content-Length: 21\r\n"
-				"Connection: close\r\n\r\n"
-				"404 - File not found!";
-			ssize_t sent = send(client_fd, fallback.c_str(), fallback.size(), 0);
-			if (sent != (ssize_t)fallback.size()) {
-				std::cerr << "❌ Failed to send complete fallback error response: " << sent << " of " << fallback.size() << " bytes" << std::endl;
-			}
-		}
+		std::string errorBody = getErrorPageBody(404, config);
+		sendHtmlResponse(client_fd, 404, errorBody);
 		return;
 	}
 
 	std::string body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 	file.close();
-
-	std::ostringstream oss;
-	oss << "HTTP/1.1 200 OK\r\n";
-	oss << "Content-Type: " << getContentType(path) << "\r\n";
-	oss << "Content-Length: " << body.size() << "\r\n";
-	oss << "Connection: close\r\n\r\n";
-	oss << body;
-	std::string response = oss.str();
-	ssize_t sent = send(client_fd, response.c_str(), response.size(), 0);
-	if (sent != (ssize_t)response.size()) {
-		std::cerr << "❌ Failed to send complete static file response: " << sent << " of " << response.size() << " bytes" << std::endl;
-	}
+	sendHtmlResponse(client_fd, 200, body);
 }
+
 
 /*
 * This is a complete rewrite of the upload handler using a direct byte-by-byte approach
@@ -307,44 +269,78 @@ void handleUpload(const std::string &request, int client_fd, const ServerConfig 
 
 	// Send success response with proper charset
 	// Create a response with a complete HTML5 document
-	std::string responseBody = "<!DOCTYPE html>\n"
-		"<html lang=\"en\">\n"
-		"<head>\n"
-		"    <meta charset=\"UTF-8\">\n"
-		"    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
-		"    <title>Upload Result</title>\n"
-		"    <style>\n"
-		"        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }\n"
-		"        h1 { color: #4CAF50; }\n"
-		"        .button { display: inline-block; background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; margin-top: 20px; }\n"
-		"    </style>\n"
-		"</head>\n"
-		"<body>\n"
-		"    <h1>Upload successful! 🎉</h1>\n"
-		"    <p>Your file has been uploaded successfully.</p>\n"
-		"    <a href=\"/upload.html\" class=\"button\">Upload another file</a>\n"
-		"</body>\n"
-		"</html>";
+	std::string successPath = config.root + "/templates/upload_success.html";
+	std::ifstream successFile(successPath.c_str());
+	std::string body;
 
-	// Get the exact byte size of the response body
-	size_t bodySize = responseBody.size();
-
-	// Debug the body size calculation
-	std::cout << "Response body (length=" << bodySize << " bytes):" << std::endl;
-
-	// Build the response with accurate Content-Length
-	std::ostringstream oss;
-	oss << "HTTP/1.1 200 OK\r\n";
-	oss << "Content-Type: text/html; charset=UTF-8\r\n";
-	oss << "Content-Length: " << bodySize << "\r\n";
-	oss << "Connection: close\r\n"; // Explicitly close the connection
-	oss << "\r\n";
-	oss << responseBody;
-
-	std::string success = oss.str();
-	// Send with error checking
-	ssize_t sent = send(client_fd, success.c_str(), success.size(), 0);
-	if (sent != (ssize_t)success.size()) {
-		std::cerr << "❌ Failed to send complete response: " << sent << " of " << success.size() << " bytes" << std::endl;
+	if (successFile.is_open()) {
+		body.assign((std::istreambuf_iterator<char>(successFile)),
+					std::istreambuf_iterator<char>());
 	}
+	else
+		body = "<html><body><h1>Upload successful</h1></body></html>";
+	sendHtmlResponse(client_fd,  200, body);
+}
+
+std::string buildHtmlResponse(int code, const std::string& body) {
+	std::ostringstream oss;
+	oss << "HTTP/1.1 " << code << " " << getStatusMessage(code) << "\r\n";
+	oss << "Content-Type: text/html; charset=UTF-8\r\n";
+	oss << "Content-Length: " << body.size() << "\r\n";
+	oss << "Connection: close\r\n"; // Explicitly close the connection
+	oss << body;
+	return oss.str();
+}
+
+const char* getStatusMessage(int code) {
+	static std::map<int, std::string> statusList;
+	if (statusList.empty()) {
+		statusList[200] = "OK";
+		statusList[201] = "Created";
+		statusList[204] = "No Content";
+		statusList[301] = "Moved Permanently";
+		statusList[302] = "Found";
+		statusList[400] = "Bad Request";
+		statusList[401] = "Unauthorized";
+		statusList[403] = "Forbidden";
+		statusList[404] = "Not Found";
+		statusList[405] = "Method Not Allowed";
+		statusList[413] = "Payload Too Large";
+		statusList[500] = "Internal Server Error";
+		statusList[501] = "Not Implemented";
+		statusList[502] = "Bad Gateway";
+		statusList[503] = "Service Unavailable";
+	}
+	//iterate through the map to find the corresponding code and message
+	std::map<int, std::string>::const_iterator it = statusList.find(code);
+	if (it != statusList.end())
+		return it->second.c_str();
+	return "Unknown";
+}
+
+void sendHtmlResponse(int fd, int code, const std::string& body) {
+	std::string response = buildHtmlResponse(code, body);
+	ssize_t sent = send(fd, response.c_str(), response.size(), 0);
+	if (sent != (ssize_t)response.size()) {
+		std::cerr << "❌ Failed to send response for status code: " << sent << " of " << response.size() << " bytes\n";
+	}
+}
+
+std::string	getErrorPageBody(int code, const ServerConfig& config) {
+	std::map<int, std::string>::const_iterator it = config.error_pages.find(code);
+	if (it != config.error_pages.end()) {
+		std::string fullPath = config.root + it->second;
+		std::ifstream file(fullPath.c_str());
+		if (file.is_open()) {
+			std::string content((std::istreambuf_iterator<char>(file)),
+								std::istreambuf_iterator<char>());
+			file.close();
+			return content;
+		}
+	}
+	std::ostringstream oss;
+	oss << "<html><body><h1>" << code << " - ";
+	oss << getStatusMessage(code);
+	oss << "</h1></body></html>";
+	return oss.str();
 }
