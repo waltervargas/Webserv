@@ -6,12 +6,14 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:19:52 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/18 14:59:03 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/20 14:52:54 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/WebServ.hpp"
 #include <iostream>
+
+ServerConfig::ServerConfig() : port(0), client_max_body_size(0) {}
 
 void	ServerConfig::print() const {
 	std::cout << "\n======================" << std::endl;
@@ -37,16 +39,16 @@ void	ServerConfig::print() const {
 
 void	applyDefaults(ServerConfig& server) {
 	if (server.port == 0)
-		server.port = 80;
+		server.port = 8080;
 	if (server.host.empty())
 		server.host = "0.0.0.0";
 	if (server.root.empty())
-		server.root = "/var/www.html";
+		server.root = "www";
 	if (server.index.empty())
 		server.index = "index.html";
 	if (server.server_name.empty())
 		server.server_name = "default_server";
-	if (server.client_max_body_size == 0)
+	if (!server.client_max_body_size)
 		server.client_max_body_size = 1000000;
 }
 

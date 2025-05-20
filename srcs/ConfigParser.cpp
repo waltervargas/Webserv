@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:20:05 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/18 13:08:24 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/20 14:37:57 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -120,7 +120,7 @@ void ConfigParser::parseServerBlock(std::ifstream& file, ServerConfig& server) {
 			parseServerDirective(server, key, value);
 		}
 	}
-	if (server.port == 0)
+	if (server.port < 0)
 		throw std::runtime_error("❌ Missing or invalid 'listen' directive in server block\n");
 	if (server.host.empty())
 		error("Missing 'host' directive in server block\n");
@@ -228,6 +228,11 @@ void	ConfigParser::applyInheritance(LocationConfig& location, const ServerConfig
 		location.root = server.root;
 	if (!location.index_set)
 		location.index = server.index;
+	if (!location.methods.empty()) {
+		location.methods.push_back("GET");
+		location.methods.push_back("POST");
+		location.methods.push_back("DELETE");
+	}
 }
 
 void	ConfigParser::error(const std::string& msg) const {
