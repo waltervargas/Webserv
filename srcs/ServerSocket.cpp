@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:19:37 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/19 17:42:40 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/20 12:11:01 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,20 +54,24 @@ fcntl sets the socket to non-blocking mode.
 We bind, listen, and accept incoming connections on this socket.
 */
 bool	ServerSocket::init(int port, const std::string& host) {
+	//creates a TCP socket for IPv4 and stores the FD
 	_fd = safe_socket(AF_INET, SOCK_STREAM, 0);
 	if (_fd == -1) return false;
 
 	int yes = 1; //in use
+	//allows reuse of socket, avoids "aready in use" errors
 	if (setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1) {
 		std::cerr << "setsockopt failed: " << strerror(errno) << std::endl;
 		close(_fd);
 		return false;
 	}
+	//make the socket non-blocking
 	if (fcntl(_fd, F_SETFL, O_NONBLOCK) == -1) {
 		std::cerr << "Failed to set FD to non-blocking: " << std::strerror(errno) << std::endl;
 		close(_fd);
 		return false;
 	}
+	//fills socket address struct
 	sockaddr_in serverAddress;
 	serverAddress.sin_family = AF_INET;	
 	serverAddress.sin_port = htons(port);

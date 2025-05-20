@@ -27,6 +27,9 @@
 /*
 find the script/language interpreter by lopping through all config.locations
 check that the script extension matches
+
+To Run CGI for testing, once ./webserv is running, in another terminal:
+curl http://localhost:8081/cgi-bin/hello.py
 */
 std::string getInterpreter(const std::string& path, const ServerConfig& config) {
 	for (size_t i = 0; i < config.locations.size(); ++i) {
