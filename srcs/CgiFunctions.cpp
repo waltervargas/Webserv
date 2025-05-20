@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/19 15:38:46 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/19 17:34:59 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/20 12:23:02 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,9 @@
 /*
 find the script/language interpreter by lopping through all config.locations
 check that the script extension matches
+
+To Run CGI for testing, once ./webserv is running, in another terminal:
+curl http://localhost:8081/cgi-bin/hello.py
 */
 std::string getInterpreter(const std::string& path, const ServerConfig& config) {
 	for (size_t i = 0; i < config.locations.size(); ++i) {
@@ -95,7 +98,9 @@ void handleCgi(const Request req, int fd, const ServerConfig& config, std::strin
 		//prepare small env
 		std::string method = req.getMethod();
 		std::string pathInfo = req.getPath();
-		std::string contentLengthStr = std::to_string(req.getBody().length());
+		std::ostringstream oss;
+		oss << req.getBody().length();
+		std::string contentLengthStr = oss.str();
 		
 		//make "CGI headers but passed through execve() instead of HTTP stream"
 		//pre-set values or ENV variables the CGI uses when running the script
