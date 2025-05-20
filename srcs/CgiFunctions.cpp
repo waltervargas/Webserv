@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/19 15:38:46 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/19 17:34:59 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/20 12:29:45 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -95,7 +95,9 @@ void handleCgi(const Request req, int fd, const ServerConfig& config, std::strin
 		//prepare small env
 		std::string method = req.getMethod();
 		std::string pathInfo = req.getPath();
-		std::string contentLengthStr = std::to_string(req.getBody().length());
+		std::ostringstream oss;
+		oss << req.getBody().length();
+		std::string contentLengthStr = oss.str();
 		
 		//make "CGI headers but passed through execve() instead of HTTP stream"
 		//pre-set values or ENV variables the CGI uses when running the script
