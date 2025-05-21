@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:20:05 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/20 14:37:57 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/21 13:26:36 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,6 +79,7 @@ void ConfigParser::parseServerBlock(std::ifstream& file, ServerConfig& server) {
 		if (line == "}") {
 			depth--;
 			if (depth == 0) {
+				convertListenEntriesToPortsAndHost(server);
 				applyDefaults(server);
 				return;
 			}
@@ -86,11 +87,12 @@ void ConfigParser::parseServerBlock(std::ifstream& file, ServerConfig& server) {
 		}
 		//checks if location and '{' are on same line, but rejects 'location\{' or 'location\{'
 		//like nginx
-		if (line.find("location") == 0 && line.find("{") != std::string::npos) {
+		if (line.find("location") == 0) {
 			std::istringstream iss(line);
-			std::string	type, path;
-			iss >> type >> path;
-
+			std::string	type, path, brace;
+			iss >> type >> path >> brace;
+			if (brace != "{")
+				throw std::runtime_error("Malformed location block: expected space between path and '{', e.g. 'location / {'\n");
 			if (!path.empty()) {
 				LocationConfig	location;
 				location.path = path; //save URL path for location block (upload etc)
@@ -101,6 +103,9 @@ void ConfigParser::parseServerBlock(std::ifstream& file, ServerConfig& server) {
 						error("Duplicate location block for path: " + location.path);
 						return;
 					}
+				}
+				if (location.path[0] != '/') {
+					throw std::runtime_error("Location path must start with '/'\n");
 				}
 				server.locations.push_back(location);
 				continue;
@@ -120,7 +125,7 @@ void ConfigParser::parseServerBlock(std::ifstream& file, ServerConfig& server) {
 			parseServerDirective(server, key, value);
 		}
 	}
-	if (server.port < 0)
+	if (server.ports.empty())
 		throw std::runtime_error("❌ Missing or invalid 'listen' directive in server block\n");
 	if (server.host.empty())
 		error("Missing 'host' directive in server block\n");
@@ -164,8 +169,9 @@ void	ConfigParser::print() const {
 }
 
 void	ConfigParser::parseServerDirective(ServerConfig& server, const std::string& key, const std::string& value) {
+	//store the list of ports as raw data to be converted later
 	if (key == "listen")
-		server.port = std::atoi(value.c_str());
+		server.listen_entries.push_back(value);
 	else if (key == "port")
 		error ("Unknown directive in server block: '" + key + "'\n");
 	else if (key == "host")
@@ -206,10 +212,10 @@ void	ConfigParser::parseLocationDirective(LocationConfig& location, const std::s
 		if (value == "on")
 			location.autoindex = true;
 	}
-	else if (key == "allowed_methods" || key == "methods")
-		location.methods = line_splitter(value);
 	else if (key == "upload_path")
 		location.upload_path = value;
+	else if (key == "methods" || key == "allowed_methods")
+		location.methods = line_splitter(value);
 	else if (key == "cgi_path")
 		location.cgi_paths["default"] = value;
 	else if (key == "cgi") {
@@ -228,7 +234,7 @@ void	ConfigParser::applyInheritance(LocationConfig& location, const ServerConfig
 		location.root = server.root;
 	if (!location.index_set)
 		location.index = server.index;
-	if (!location.methods.empty()) {
+	if (location.methods.empty()) {
 		location.methods.push_back("GET");
 		location.methods.push_back("POST");
 		location.methods.push_back("DELETE");

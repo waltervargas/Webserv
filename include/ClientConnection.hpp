@@ -6,13 +6,14 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 13:53:30 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/18 17:54:39 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/21 18:23:14 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 
 #include <string>
+#include "../include/ServerConfig.hpp"
 
 class ClientConnection {
   private:
@@ -27,5 +28,5 @@ class ClientConnection {
     std::string	getMessage() const;
     int         getFd() const;
     void        closeConnection();
-    std::string recvFullRequest(int client_fd);
+    std::string recvFullRequest(int client_fd, const ServerConfig& config);
 };

@@ -60,13 +60,16 @@ OBJ_DIR = objs
 SHARED = \
 	$(SRC_DIR)/ConfigParser.cpp \
 	$(SRC_DIR)/helperFunction.cpp \
+	$(SRC_DIR)/inputValidation.cpp \
+	$(SRC_DIR)/initSocket.cpp \
 	$(SRC_DIR)/LocationConfig.cpp \
 	$(SRC_DIR)/ServerSocket.cpp \
 	$(SRC_DIR)/ClientConnection.cpp \
 	$(SRC_DIR)/ServerConfig.cpp \
 	$(SRC_DIR)/Request.cpp \
 	$(SRC_DIR)/Response.cpp \
-	$(SRC_DIR)/CgiFunctions.cpp
+	$(SRC_DIR)/CgiFunctions.cpp \
+	$(SRC_DIR)/HttpStatus.cpp
 
 SRCS = 	$(SRC_DIR)/WebServ.cpp \
 		$(SHARED)

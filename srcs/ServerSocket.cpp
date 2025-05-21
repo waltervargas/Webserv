@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:19:37 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/20 12:11:01 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/21 14:19:55 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,7 @@ ServerSocket::~ServerSocket() {
 }
 
 /*
-Checks if host is 0.0.0.0 or localhost or something else
+Checks if host is 0.0.0.0 (public) or 127.0.0.1 (localhost) or something else
 struct hostent is an old C-struct part of BSD sockets API
 */
 bool checkHost(const std::string& host, in_addr& addr) {
@@ -49,7 +49,6 @@ bool checkHost(const std::string& host, in_addr& addr) {
 
 /*
 htons converts host byte order to network byte order (for port).
-INADDR_ANY binds to all available interfaces.
 fcntl sets the socket to non-blocking mode.
 We bind, listen, and accept incoming connections on this socket.
 */
@@ -75,18 +74,13 @@ bool	ServerSocket::init(int port, const std::string& host) {
 	sockaddr_in serverAddress;
 	serverAddress.sin_family = AF_INET;	
 	serverAddress.sin_port = htons(port);
-	serverAddress.sin_addr.s_addr = INADDR_ANY; //we may have to use inet_addr to convert
-	if (host == "0.0.0.0")
-		serverAddress.sin_addr.s_addr = INADDR_ANY;
-	else {
-		in_addr	addr; //if valid, it is filled thru checkHost
-		if (!checkHost(host, addr)) {
-			std::cerr << "❌ Invalid host address: " << host << std::endl;
-			closeSocket();
-			return false;
-		}
-		serverAddress.sin_addr = addr;
+	in_addr	addr; //if valid, it is filled thru checkHost
+	if (!checkHost(host, addr)) {
+		std::cerr << "❌ Invalid host address: " << host << std::endl;
+		closeSocket();
+		return false;
 	}
+	serverAddress.sin_addr = addr;
 	if (!safe_bind(_fd, serverAddress)) {
 		closeSocket();
 		return false;
