@@ -6,11 +6,12 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/14 02:34:47 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/20 12:20:04 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/21 18:19:45 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/ClientConnection.hpp"
+#include "../include/WebServ.hpp"
 #include <poll.h>
 #include <sys/stat.h>
 #include <iostream>
@@ -53,7 +54,7 @@ ClientConnection::~ClientConnection() {
 -gracefully handles slow clients and disconnects
 -exits cleanly after each transfer
 */
-std::string ClientConnection::recvFullRequest(int client_fd) {
+std::string ClientConnection::recvFullRequest(int client_fd, const ServerConfig& config) {
 	//switched to vector to handle images and pdfs
 	std::vector<char> request;
 	char buffer[4096];
@@ -71,7 +72,8 @@ std::string ClientConnection::recvFullRequest(int client_fd) {
 		int ready = poll(&pfd, 1, 300);
 		if (ready < 0) {
 			std::cerr << "⚠️ Poll failed: " << strerror(errno) << std::endl;
-			break;
+			sendHtmlResponse(client_fd, 500, getErrorPageBody(500, config));
+			return "";
 		}
 		else if (ready == 0) {
 			//timeout:  wait again unless finished
@@ -94,7 +96,8 @@ std::string ClientConnection::recvFullRequest(int client_fd) {
 					return "";
 				else {
 					std::cerr << "⚠️ Connection closed or recv failed during recvFullRequest\n";
-					break;
+					sendHtmlResponse(client_fd, 400, getErrorPageBody(400, config));
+					return "";
 				}
 			}
 			request.insert(request.end(), buffer, buffer + bytes);
@@ -122,6 +125,7 @@ std::string ClientConnection::recvFullRequest(int client_fd) {
 	}
 	if (!headersParsed) {
 		std::cerr << "❌ Failed to parse headers\n";
+		sendHtmlResponse(client_fd, 404, getErrorPageBody(400, config));
 		return "";
 	}
 	//checks if all data received
@@ -132,6 +136,7 @@ std::string ClientConnection::recvFullRequest(int client_fd) {
 		if (bodyReceived < totalContentLength) {
 			std::cerr << "❌ Incomplete body (received " << request.size() - bodyStart
 				<< " of " << totalContentLength << " bytes)\n";
+			sendHtmlResponse(client_fd, 400, getErrorPageBody(400, config));
 			return "";
 		}
 	}

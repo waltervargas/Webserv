@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/19 07:13:21 by kellen            #+#    #+#             */
-/*   Updated: 2025/05/18 17:17:01 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/21 18:03:41 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,29 +19,11 @@
 Response::Response() {}
 
 /*
-* This function builds a full HTTP 200 OK response.
-*/
-std::string Response::build200(const std::string& body, const std::string& contentType) {
-	std::ostringstream response;
-	response << buildHeader(200, "OK", body.size(), contentType);
-	response << body;
-	return response.str();
-}
-
-/*
-* This function builds a full HTTP 404 Not Found response.
-*/
-std::string Response::build404() {
-	std::string body = "<h1>404 - Not Found 💔</h1>";
-	return build200(body); // reuse 200 builder with a 404 message
-}
-
-/*
 * This function builds the HTTP header for a given status and content.
 */
-std::string Response::buildHeader(int statusCode, const std::string& statusText, size_t contentLength, const std::string& contentType) {
+std::string Response::buildHeader(int statusCode, size_t contentLength, const std::string& contentType) {
 	std::ostringstream header;
-	header << "HTTP/1.1 " << statusCode << " " << statusText << "\r\n";
+	header << "HTTP/1.1 " << statusCode << " " << HttpStatus::getStatusMessages(statusCode) << "\r\n";
 	header << "Content-Length: " << contentLength << "\r\n";
 	header << "Content-Type: " << contentType << "; charset=utf-8\r\n";
 	header << "\r\n";
@@ -70,4 +52,11 @@ std::string Response::getContentType(const std::string& path) {
 	if (ext == ".json") return "application/json";
 
 	return "application/octet-stream";
+}
+
+std::string Response::build(int statusCode, const std::string& body, const std::string& contentType) {
+	std::ostringstream oss;
+	oss << buildHeader(statusCode, body.size(), contentType);
+	oss << body;
+	return oss.str();
 }

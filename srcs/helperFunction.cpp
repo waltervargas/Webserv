@@ -6,12 +6,14 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:19:59 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/20 19:31:09 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/21 18:02:10 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/WebServ.hpp"
 #include "../include/ServerConfig.hpp"
+#include "../include/HttpStatus.hpp"
+#include "../include/Response.hpp"
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <cstring>
@@ -101,15 +103,6 @@ void	shutDownWebserv(std::vector<ServerSocket*>& serverSockets, std::map<int, Cl
 	std::cout << "🧼 Webserv shut down cleanly.\n";
 }
 
-std::string getContentType(const std::string& path) {
-	if (path.find(".html") != std::string::npos) return "text/html; charset=UTF-8";
-	if (path.find(".css") != std::string::npos) return "text/css; charset=UTF-8";
-	if (path.find(".js") != std::string::npos) return "application/javascript; charset=UTF-8";
-	if (path.find(".png") != std::string::npos) return "image/png";
-	if (path.find(".jpg") != std::string::npos) return "image/jpeg";
-	return "application/octet-stream";
-}
-
 void serveStaticFile(std::string path, int client_fd, const ServerConfig &config) {
 	if (path == "/")
 		path = "/" + config.index;
@@ -127,6 +120,35 @@ void serveStaticFile(std::string path, int client_fd, const ServerConfig &config
 	sendHtmlResponse(client_fd, 200, body);
 }
 
+std::string extractBoundary(const std::string& request) {
+	// We must find the end of the file data, which is marked by a boundary
+	// First, extract the boundary from the Content-Type header
+	size_t boundaryPos = request.find("boundary=");
+	if (boundaryPos == std::string::npos)
+		return "";
+
+	// Extract the boundary string, handling both quoted and unquoted formats
+	size_t boundaryStart = boundaryPos + 9; // "boundary=" length
+
+	if (request[boundaryStart] == '"') {
+		// Quoted boundary
+		boundaryStart++;
+		size_t boundaryEnd = request.find("\"", boundaryStart);
+		if (boundaryEnd == std::string::npos)
+			return "";
+		return request.substr(boundaryStart, boundaryEnd - boundaryStart);
+	}
+	else {
+		// Unquoted boundary
+		size_t boundaryEnd = request.find_first_of(" \r\n;", boundaryStart);
+		if (boundaryEnd == std::string::npos) {
+			// If no terminator, use the rest of the line
+			return request.substr(boundaryStart);
+		} else {
+			return request.substr(boundaryStart, boundaryEnd - boundaryStart);
+		}
+	}	
+}
 
 /*
 * This is a complete rewrite of the upload handler using a direct byte-by-byte approach
@@ -173,38 +195,8 @@ void handleUpload(const std::string &request, int client_fd, const ServerConfig 
 	// The actual file content starts immediately after the \r\n\r\n
 	size_t contentStart = contentStartMarker + 4;
 
-	// Now we need to find the end of the file data, which is marked by a boundary
-	// First, extract the boundary from the Content-Type header
-	size_t boundaryPos = request.find("boundary=");
-	if (boundaryPos == std::string::npos) {
-		std::cerr << "❌ No boundary parameter found.\n";
-		return;
-	}
-
 	// Extract the boundary string, handling both quoted and unquoted formats
-	std::string rawBoundary;
-	size_t boundaryStart = boundaryPos + 9; // "boundary=" length
-
-	if (request[boundaryStart] == '"') {
-		// Quoted boundary
-		boundaryStart++;
-		size_t boundaryEnd = request.find("\"", boundaryStart);
-		if (boundaryEnd == std::string::npos) {
-			std::cerr << "❌ Invalid quoted boundary format.\n";
-			return;
-		}
-		rawBoundary = request.substr(boundaryStart, boundaryEnd - boundaryStart);
-	} else {
-		// Unquoted boundary
-		size_t boundaryEnd = request.find_first_of(" \r\n;", boundaryStart);
-		if (boundaryEnd == std::string::npos) {
-			// If no terminator, use the rest of the line
-			rawBoundary = request.substr(boundaryStart);
-		} else {
-			rawBoundary = request.substr(boundaryStart, boundaryEnd - boundaryStart);
-		}
-	}
-
+	std::string rawBoundary = extractBoundary(request);
 	if (rawBoundary.empty()) {
 		std::cerr << "❌ Empty boundary string.\n";
 		return;
@@ -282,44 +274,8 @@ void handleUpload(const std::string &request, int client_fd, const ServerConfig 
 	sendHtmlResponse(client_fd,  200, body);
 }
 
-std::string buildHtmlResponse(int code, const std::string& body) {
-	std::ostringstream oss;
-	oss << "HTTP/1.1 " << code << " " << getStatusMessage(code) << "\r\n";
-	oss << "Content-Type: text/html; charset=UTF-8\r\n";
-	oss << "Content-Length: " << body.size() << "\r\n";
-	oss << "Connection: close\r\n"; // Explicitly close the connection
-	oss << body;
-	return oss.str();
-}
-
-const char* getStatusMessage(int code) {
-	static std::map<int, std::string> statusList;
-	if (statusList.empty()) {
-		statusList[200] = "OK";
-		statusList[201] = "Created";
-		statusList[204] = "No Content";
-		statusList[301] = "Moved Permanently";
-		statusList[302] = "Found";
-		statusList[400] = "Bad Request";
-		statusList[401] = "Unauthorized";
-		statusList[403] = "Forbidden";
-		statusList[404] = "Not Found";
-		statusList[405] = "Method Not Allowed";
-		statusList[413] = "Payload Too Large";
-		statusList[500] = "Internal Server Error";
-		statusList[501] = "Not Implemented";
-		statusList[502] = "Bad Gateway";
-		statusList[503] = "Service Unavailable";
-	}
-	//iterate through the map to find the corresponding code and message
-	std::map<int, std::string>::const_iterator it = statusList.find(code);
-	if (it != statusList.end())
-		return it->second.c_str();
-	return "Unknown";
-}
-
 void sendHtmlResponse(int fd, int code, const std::string& body) {
-	std::string response = buildHtmlResponse(code, body);
+	std::string response = Response::build(code, body, "text/html");
 	ssize_t sent = send(fd, response.c_str(), response.size(), 0);
 	if (sent != (ssize_t)response.size()) {
 		std::cerr << "❌ Failed to send response for status code: " << sent << " of " << response.size() << " bytes\n";
@@ -340,7 +296,7 @@ std::string	getErrorPageBody(int code, const ServerConfig& config) {
 	}
 	std::ostringstream oss;
 	oss << "<html><body><h1>" << code << " - ";
-	oss << getStatusMessage(code);
+	oss << HttpStatus::getStatusMessages(code);
 	oss << "</h1></body></html>";
 	return oss.str();
 }

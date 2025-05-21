@@ -6,18 +6,21 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:19:52 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/20 14:52:54 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/21 13:44:28 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/WebServ.hpp"
 #include <iostream>
 
-ServerConfig::ServerConfig() : port(0), client_max_body_size(0) {}
+ServerConfig::ServerConfig() : ports(0), client_max_body_size(0) {}
 
 void	ServerConfig::print() const {
 	std::cout << "\n======================" << std::endl;
-	std::cout << "listen: " << port << std::endl;
+	std::cout << "listen: ";
+	for (size_t i = 0; i < ports.size(); ++i)
+		std::cout << ports[i] << " ";
+	std::cout << std::endl;
 	std::cout << "host: " << host << std::endl;
 	std::cout << "server_name: " << server_name << std::endl;
 	std::cout << "root: " << root << std::endl;
@@ -38,10 +41,12 @@ void	ServerConfig::print() const {
 }
 
 void	applyDefaults(ServerConfig& server) {
-	if (server.port == 0)
-		server.port = 8080;
+	if (server.listen_entries.empty()) {
+		server.listen_entries.push_back("8080");
+		convertListenEntriesToPortsAndHost(server);
+	}
 	if (server.host.empty())
-		server.host = "0.0.0.0";
+		server.host = "127.0.0.1";
 	if (server.root.empty())
 		server.root = "www";
 	if (server.index.empty())
