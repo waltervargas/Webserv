@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/15 17:27:43 by keramos-          #+#    #+#             */
-/*   Updated: 2025/05/21 15:27:55 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/22 15:37:12 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,7 @@ extern int g_signal;
 class ServerSocket;
 class ClientConnection;
 
+std::string	intToStr(int n);
 std::string	trim(std::string& s);
 std::string	cleanValue(std::string s);
 std::string getContentType(const std::string& path);
