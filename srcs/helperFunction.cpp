@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:19:59 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/21 18:02:10 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/22 15:37:23 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,12 @@
 #include <cstring>
 #include <cerrno>
 #include <iostream>
+
+std::string	intToStr(int n) {
+	std::ostringstream oss;
+	oss << n;
+	return oss.str();
+}
 
 int	safe_socket(int domain, int type, int protocol) {
 	int	fd = socket(domain, type, protocol);

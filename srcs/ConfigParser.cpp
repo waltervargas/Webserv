@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:20:05 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/21 13:26:36 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/22 15:57:55 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -100,8 +100,7 @@ void ConfigParser::parseServerBlock(std::ifstream& file, ServerConfig& server) {
 				applyInheritance(location, server);
 				for (size_t i = 0; i < server.locations.size(); ++i) {
 					if (server.locations[i].path == location.path) {
-						error("Duplicate location block for path: " + location.path);
-						return;
+						throw std::runtime_error("Duplicate location block for path: " + location.path);
 					}
 				}
 				if (location.path[0] != '/') {
@@ -111,10 +110,10 @@ void ConfigParser::parseServerBlock(std::ifstream& file, ServerConfig& server) {
 				continue;
 			}
 			else
-				error( "Missing location path\n");
+				throw std::runtime_error( "Missing location path\n");
 		}
 		else if (line.find("location") == 0)
-			error("couldn't read location block (possibly missing '{')\n");
+			throw std::runtime_error("couldn't read location block (possibly missing '{')\n");
 		std::string key, value;
 		if (parseKeyValue(line, key, value)) {
 			server.raw[key] = value; //stores all items in the block to ensure we parse it
@@ -128,7 +127,7 @@ void ConfigParser::parseServerBlock(std::ifstream& file, ServerConfig& server) {
 	if (server.ports.empty())
 		throw std::runtime_error("❌ Missing or invalid 'listen' directive in server block\n");
 	if (server.host.empty())
-		error("Missing 'host' directive in server block\n");
+		error("Missing 'host' directive in server block, using default\n");
 }
 
 void ConfigParser::parseLocationBlock(std::ifstream& file, LocationConfig& location) {
@@ -188,8 +187,11 @@ void	ConfigParser::parseServerDirective(ServerConfig& server, const std::string&
 		std::istringstream iss(value);
 		int	code;
 		std::string	path;
-		if (iss >> code >> path)
+		if (iss >> code >> path) {
+			if (server.error_pages.count(code))
+				throw std::runtime_error("Duplicate error_page for: " + intToStr(code));
 			server.error_pages[code] = path;
+		}
 		else
 			error("Couldn't read error page\n");
 	}
