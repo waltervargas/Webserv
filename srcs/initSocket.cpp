@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/21 13:58:50 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/21 18:22:36 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/25 15:25:26 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -124,18 +124,12 @@ void	handleExistingClient(int fd, std::vector<pollfd> &fds, std::map<int, Client
 	}
 	ClientConnection* client = it->second;
 	//read the HHTP request from the socket
-	std::string request = client->recvFullRequest(fd, config);
-	if (request.empty()) {
-		std::cerr << "❌ Empty or invalid HTTP request\n";
-		close(fd);
-		delete client;
-		clients.erase(it);
-		fds.erase(fds.begin() + i);
-		--i;
+	if (!client->readRequest(config)) //not done yet, wait for next POLLIN
 		return;
-	}
+	
+	std::string rawRequest = client->getRawRequest();
 	//parset the HTTP item into a Request object & extract methods and path
-	Request	req(request);
+	Request	req(rawRequest);
 	std::string method = req.getMethod();
 	std::string path = req.getPath();
 	
@@ -143,7 +137,7 @@ void	handleExistingClient(int fd, std::vector<pollfd> &fds, std::map<int, Client
 	if (method == "POST" && path == "/upload") {
 		std::cout << "handling upload\n" << std::endl;
 		//handle file uploads
-		handleUpload(request, fd, config);
+		handleUpload(rawRequest, fd, config);
 	}
 	else {
 		//check for CGI interpreter (.py, .php, etc.)
