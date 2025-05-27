@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 13:53:17 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/21 13:10:08 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/27 11:06:44 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,6 +33,7 @@ struct	ServerConfig {
 	ServerConfig();
 
 	void	print() const;
+	void	loadErrorPages();
 };
 
 void		applyDefaults(ServerConfig& server);

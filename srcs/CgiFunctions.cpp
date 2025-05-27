@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/19 15:38:46 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/20 12:29:45 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/27 11:13:47 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 #include <sys/wait.h>
 #include <cstdlib>
 #include <cstring>
+#include <cerrno> //errno
 #include <iostream>
 #include <vector>
 #include <sstream>

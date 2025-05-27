@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/21 13:58:50 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/26 15:51:44 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/27 16:32:17 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,6 +51,14 @@ void	runEventLoop(std::vector<struct pollfd>& fds, std::map<int, ServerSocket*>&
 					std::map<int, ClientConnection*>& clients, std::map<int, ServerSocket*>& clientToServer) {
 
 	while (g_signal != 0) {
+		if (poll(&fds[0], fds.size(), -1) < 0) {
+			if (errno == EINTR) {
+				std::cerr << "⚠️ Poll interrupted by signal, continuing...\n";
+				continue; // If interrupted by a signal, just continue
+			}
+			std::cerr << "❌ Poll error: " << strerror(errno) << std::endl;
+			break; // Exit on other poll errors
+		}
 		for (size_t i = 0; i < fds.size(); ++i) {
 			int fd = fds[i].fd;
 			bool known = fdToSocket.count(fd) || clients.count(fd);
@@ -109,8 +117,7 @@ void	handleNewClient(ServerSocket* server, std::vector<pollfd> &fds, std::map<in
 }
 
 /*
-When poll() identifies data to be read on a client socket, this function is called.
-It finds the corresponding file descriptor in the ClientConnection map,
+This function finds the corresponding file descriptor in the ClientConnection map,
 parses and handles the HTTP request using the appropriate handler (static, CGI, or upload),
 and then cleans up the client connection.
 */
@@ -124,12 +131,22 @@ void	handleExistingClient(int fd, std::vector<pollfd> &fds, std::map<int, Client
 	}
 	ClientConnection* client = it->second;
 	//read the HHTP request from the socket
-	if (!client->readRequest(config)) //not done yet, wait for next POLLIN
+//	if (!client->readRequest(config)) //not done yet, wait for next POLLIN
+	std::string request = client->recvFullRequest(fd, config);
+	if (request.empty()) {
+		std::cerr << "❌ Empty or invalid HTTP request\n";
+		close(fd);
+		delete client;
+		clients.erase(it);
+		fds.erase(fds.begin() + i);
+		--i;
 		return;
+	}
 	
-	std::string rawRequest = client->getRawRequest();
+//	std::string rawRequest = client->getRawRequest();
 	//parset the HTTP item into a Request object & extract methods and path
-	Request	req(rawRequest);
+//	Request	req(rawRequest);
+	Request	req(request);
 	std::string method = req.getMethod();
 	std::string path = req.getPath();
 	
@@ -149,7 +166,7 @@ void	handleExistingClient(int fd, std::vector<pollfd> &fds, std::map<int, Client
 	if (method == "POST" && path == "/upload") {
 		std::cout << "handling upload\n" << std::endl;
 		//handle file uploads
-		handleUpload(rawRequest, fd, config);
+		handleUpload(request, fd, config);
 	}
 	else {
 		//check for CGI interpreter (.py, .php, etc.)

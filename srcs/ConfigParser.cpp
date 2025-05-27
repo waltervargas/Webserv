@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:20:05 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/26 15:43:51 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/27 11:12:53 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,6 +56,7 @@ void	ConfigParser::parseFile(const std::string& path) {
 			std::istringstream iss(line);
 			ServerConfig	server;
 			parseServerBlock(file, server);
+			server.loadErrorPages();//loads error pages from files if any specified
 			servers.push_back(server);
 			continue;
 		}

@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:19:59 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/26 16:08:06 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/27 15:05:50 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -202,7 +202,7 @@ void handleUpload(const std::string &request, int client_fd, const ServerConfig 
 	}
 
 	// The actual file content starts immediately after the \r\n\r\n
-	size_t contentStart = contentStartMarker + 4;
+	size_t contentStart = contentStartMarker + 9;
 
 	// Extract the boundary string, handling both quoted and unquoted formats
 	std::string rawBoundary = extractBoundary(request);
