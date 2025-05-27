@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:19:59 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/22 15:37:23 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/26 16:08:06 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -116,8 +116,11 @@ void serveStaticFile(std::string path, int client_fd, const ServerConfig &config
 	std::string fullPath = config.root + path;
 	std::ifstream file(fullPath.c_str());
 	if (!file.is_open()) {
+		std::cerr << "❌ Static file not found: " << fullPath << std::endl;
 		std::string errorBody = getErrorPageBody(404, config);
+//		std::string response = Response::Build(404, errorBody, "text/html");
 		sendHtmlResponse(client_fd, 404, errorBody);
+//		send(client_fd, response.c_str(), response.size(), 0);
 		return;
 	}
 
@@ -305,4 +308,30 @@ std::string	getErrorPageBody(int code, const ServerConfig& config) {
 	oss << HttpStatus::getStatusMessages(code);
 	oss << "</h1></body></html>";
 	return oss.str();
+}
+
+
+/*
+implemented location block selection using a longest prefix match. That allows more specific paths like:
+
+location /  # very general
+location /images  # more specific
+location /images/cats  # even more specific (and longest match)
+
+We do not use exact match as an exact match would miss: location /images/cats/cute.jpg
+ */
+LocationConfig matchLocation(const std::string& path, const ServerConfig& config) {
+	const std::vector<LocationConfig>& locations = config.locations;
+	
+	LocationConfig bestMatch;
+	size_t length = 0;
+
+	for (size_t i = 0; i < locations.size(); ++i) {
+		const std::string& locationPath = locations[i].path;
+		if (path.find(locationPath) == 0 && locationPath.length() > length) {
+			bestMatch = locations[i];
+			length = locationPath.length();
+		}
+	}
+	return bestMatch;
 }

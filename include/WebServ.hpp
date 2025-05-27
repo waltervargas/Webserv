@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/15 17:27:43 by keramos-          #+#    #+#             */
-/*   Updated: 2025/05/22 15:37:12 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/26 16:01:47 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,3 +66,4 @@ void		handleExistingClient(int fd, std::vector<pollfd> &fds, std::map<int, Clien
 				const ServerConfig& config);
 void		handleNewClient(ServerSocket* server, std::vector<pollfd> &fds, std::map<int, ClientConnection*>& clients, 
 				std::map<int, ServerSocket*>& clientToServer);
+LocationConfig matchLocation(const std::string& path, const ServerConfig& config);

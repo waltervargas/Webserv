@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:20:05 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/22 15:57:55 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/26 15:43:51 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -216,6 +216,8 @@ void	ConfigParser::parseLocationDirective(LocationConfig& location, const std::s
 	}
 	else if (key == "upload_path")
 		location.upload_path = value;
+	else if (key == "return")
+		location.returnStatusCode = std::atoi(value.c_str());
 	else if (key == "methods" || key == "allowed_methods")
 		location.methods = line_splitter(value);
 	else if (key == "cgi_path")
