@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/21 13:58:50 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/25 15:25:26 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/26 15:51:44 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -134,6 +134,18 @@ void	handleExistingClient(int fd, std::vector<pollfd> &fds, std::map<int, Client
 	std::string path = req.getPath();
 	
 	std::cout << "📨 " << method << " " << path << std::endl;
+	LocationConfig	location = matchLocation(path, config);
+	
+	if (location.returnStatusCode != 0) {
+		std::string body = getErrorPageBody(location.returnStatusCode, config);
+		sendHtmlResponse(fd, location.returnStatusCode, body);
+		close(fd);
+		delete client;
+		clients.erase(it);
+		fds.erase(fds.begin() + i);
+		--i;
+		return;
+	}
 	if (method == "POST" && path == "/upload") {
 		std::cout << "handling upload\n" << std::endl;
 		//handle file uploads
