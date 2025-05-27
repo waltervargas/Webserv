@@ -50,6 +50,27 @@
 		"unordered_map": "cpp",
 		"variant": "cpp",
 		"vector": "cpp",
-		"algorithm": "cpp"
+		"algorithm": "cpp",
+		"compare": "cpp",
+		"concepts": "cpp",
+		"exception": "cpp",
+		"numbers": "cpp",
+		"system_error": "cpp",
+		"type_traits": "cpp",
+		"cerrno": "cpp",
+		"atomic": "cpp",
+		"bit": "cpp",
+		"deque": "cpp",
+		"set": "cpp",
+		"functional": "cpp",
+		"iterator": "cpp",
+		"memory": "cpp",
+		"memory_resource": "cpp",
+		"numeric": "cpp",
+		"random": "cpp",
+		"utility": "cpp",
+		"ranges": "cpp",
+		"span": "cpp",
+		"cinttypes": "cpp"
 	}
 }

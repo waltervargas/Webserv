@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:19:29 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/21 14:17:17 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/27 15:10:22 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,9 +29,6 @@ void handleSignal(int signal) {
 /*
 Initializes the server using the config file, sets up server sockets and poll monitoring,
 and runs the main poll loop to handle client connections and requests.
-
-poll() is a system call that allows us to monitor multiple FDs to see if they are ready for I/O,
-without blocking on just one FD.
 */
 int	init_webserv(std::string configPath) {
 	ConfigParser	parser;
@@ -54,7 +51,6 @@ int	init_webserv(std::string configPath) {
 	checkDuplicateHostPortPairs(servers);
 	
 	std::vector<ServerSocket*> serverSockets;
-	// list of FDs to monitor with poll()
 	std::vector<struct pollfd> fds;
 	std::map<int, ServerSocket*> fdToSocket;
 	if (!initialiseSockets(servers, serverSockets, fds, fdToSocket))
