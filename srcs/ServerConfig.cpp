@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:19:52 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/27 11:07:21 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/06/10 13:03:50 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,21 +58,11 @@ void	applyDefaults(ServerConfig& server) {
 		server.client_max_body_size = 1000000;
 }
 
-void	ServerConfig::loadErrorPages() {
+/*void	ServerConfig::loadErrorPages() {
 	for (std::map<int, std::string>::iterator it = error_pages.begin(); it != error_pages.end(); ++it)
 	{
 		std::ifstream file(it->second.c_str());
-		if (file) {
-			std::stringstream buffer;
-			buffer << file.rdbuf();
-			error_pages[it->first] = buffer.str();
-			file.close();
-		}
-		else {
+		if (!file)
 			std::cout << "⚠️ Could not open error page: " << it->first << " => " << it->second << ". Using fallback page.\n";
-			std::ostringstream fallback;
-			fallback << "<html><body><h1>" << it->first << " - Error</h1></body></html>";
-			error_pages[it->first] = fallback.str();
-		}
 	}
-}
+}*/
