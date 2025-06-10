@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/21 13:58:50 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/29 13:52:04 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/06/10 18:20:33 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -141,38 +141,39 @@ void	handleExistingClient(int fd, std::vector<pollfd> &fds, std::map<int, Client
 	Request	req(request);
 	std::string method = req.getMethod();
 	std::string path = req.getPath();
+	std::string interpreter;
 	
 	std::cout << "📨 " << method << " " << path << std::endl;
 	LocationConfig	location = matchLocation(path, config);
 	
+	//return error page if specified in location block
 	if (location.returnStatusCode != 0) {
 		std::string body = getErrorPageBody(location.returnStatusCode, config);
 		sendHtmlResponse(fd, location.returnStatusCode, body);
+		goto cleanup;
+	}
+	//handle uploads
+	if (method == "POST" && path == "/upload") {
+		std::cout << "handling upload\n" << std::endl;
+		//handle file uploads
+		handleUpload(request, fd, config);
+		goto cleanup;
+	}
+	//check for CGI interpreter (.py, .php, etc.)
+	interpreter = getInterpreter(path, config);
+	if (!interpreter.empty()) {
+		//if CGI, run it
+		handleCgi(req, fd, config, interpreter);
+		goto cleanup;
+	}
+	//default: serve static
+	serveStaticFile(path, fd, config);
+	std::cout << "🧪 getPath: " << req.getPath() << "\n";
+	std::cout << "🧪 getQuery: " << req.getQuery() << "\n";
+	cleanup:
 		close(fd);
 		delete client;
 		clients.erase(it);
 		fds.erase(fds.begin() + i);
 		--i;
-		return;
-	}
-	if (method == "POST" && path == "/upload") {
-		std::cout << "handling upload\n" << std::endl;
-		//handle file uploads
-		handleUpload(request, fd, config);
-	}
-	else {
-		//check for CGI interpreter (.py, .php, etc.)
-		std::string interpreter = getInterpreter(path, config);
-		if (!interpreter.empty())
-			//if CGI, run it
-			handleCgi(req, fd, config, interpreter);
-		else
-			//if not CGI, use default file
-			serveStaticFile(path, fd, config);
-	}
-	close(fd);
-	delete client;
-	clients.erase(it);
-	fds.erase(fds.begin() + i);
-	--i;
 }
