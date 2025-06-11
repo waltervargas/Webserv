@@ -90,7 +90,10 @@ OBJS := $(patsubst %, $(OBJ_DIR)/%,$(OBJS))
 #                                  RULES                                       #
 # **************************************************************************** #
 
-all: Start $(NAME) End
+all: create_dirs Start $(NAME) End
+
+create_dirs :
+	mkdir -p www/upload
 
 Start :
 	@if [ -f $(NAME) ]; then \

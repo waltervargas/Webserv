@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/21 13:58:50 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/27 16:32:17 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/06/10 18:20:33 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,46 +47,45 @@ bool initialiseSockets(const std::vector<ServerConfig>& servers, std::vector<Ser
 	return true;
 }
 
-void	runEventLoop(std::vector<struct pollfd>& fds, std::map<int, ServerSocket*>& fdToSocket,
-					std::map<int, ClientConnection*>& clients, std::map<int, ServerSocket*>& clientToServer) {
+/*
+this is the main I/O loop with poll()
+*/
+void	runEventLoop(	std::vector<struct pollfd>& fds, 
+						std::map<int, ServerSocket*>& fdToSocket,
+						std::map<int, ClientConnection*>& clients, 
+						std::map<int, ServerSocket*>& clientToServer) {
 
 	while (g_signal != 0) {
-		if (poll(&fds[0], fds.size(), -1) < 0) {
-			if (errno == EINTR) {
-				std::cerr << "⚠️ Poll interrupted by signal, continuing...\n";
-				continue; // If interrupted by a signal, just continue
-			}
-			std::cerr << "❌ Poll error: " << strerror(errno) << std::endl;
-			break; // Exit on other poll errors
-		}
-		for (size_t i = 0; i < fds.size(); ++i) {
-			int fd = fds[i].fd;
-			bool known = fdToSocket.count(fd) || clients.count(fd);
-			if (fd <0 || !known) {
-				std::cerr << "🧽 Removing unknown or invalid fd: " << fd << std::endl;
-				close(fd);
-				fds.erase(fds.begin() + i);
-				--i;
-			}
-		}
-		//reset revents before poll as revents tells poll() why the FD is ready
-		for (size_t i = 0; i < fds.size(); ++i)
-			fds[i].revents = 0;
 		//safe to call poll()
-		int openAndReadyFDs = poll(&fds[0], fds.size(), -1);
-		if (openAndReadyFDs < 0) {
+		// revents will be automatically set by poll(), no need to reset manually
+		int ready = poll(&fds[0], fds.size(), -1);
+		if (ready < 0) {
+			if (errno == EINTR)
+				continue;
+			std::cerr << "❌ Poll() error: " << strerror(errno) << std::endl;
 			break;
 		}
 		//handle ready FD's (if there is data to read)
 		for (size_t i = 0; i < fds.size(); ++i) {
-			if (fds[i].revents & POLLIN) {
-				if (fdToSocket.count(fds[i].fd))
-					handleNewClient(fdToSocket[fds[i].fd], fds, clients, clientToServer);
-				else if (clients.count(fds[i].fd))
-					handleExistingClient(fds[i].fd, fds, clients, i, clientToServer[fds[i].fd]->getConfig());
+			//revents field is declared as a short
+			short tempRevent = fds[i].revents;
+			int fd = fds[i].fd;
+			
+			if (tempRevent & (POLLERR | POLLHUP | POLLNVAL)) {
+				std::cerr << "❌ Error or hangup on client side\n" << fd << std::endl;
+				close(fd);
+				fds.erase(fds.begin() + i);
+				--i;
+				continue;
+			}
+			if (tempRevent & POLLIN) {
+				if (fdToSocket.count(fd))
+					handleNewClient(fdToSocket[fd], fds, clients, clientToServer);
+				else if (clients.count(fd))
+					handleExistingClient(fd, fds, clients, i, clientToServer[fd]->getConfig());
 				else {
-					std::cerr << "⚠️ POLLIN on unknown fd " << fds[i].fd << std::endl;
-					close(fds[i].fd);
+					std::cerr << "⚠️ POLLIN on unknown fd " << fd << std::endl;
+					close(fd);
 					fds.erase(fds.begin() + i);
 					--i;
 				}
@@ -130,57 +129,51 @@ void	handleExistingClient(int fd, std::vector<pollfd> &fds, std::map<int, Client
 		return;
 	}
 	ClientConnection* client = it->second;
-	//read the HHTP request from the socket
-//	if (!client->readRequest(config)) //not done yet, wait for next POLLIN
-	std::string request = client->recvFullRequest(fd, config);
-	if (request.empty()) {
-		std::cerr << "❌ Empty or invalid HTTP request\n";
-		close(fd);
-		delete client;
-		clients.erase(it);
-		fds.erase(fds.begin() + i);
-		--i;
+	//Step 1: read data from client
+	client->recvFullRequest(fd, config);
+	//Step 2: Wait for all data to be received
+	if (!client->isRequestComplete())
 		return;
-	}
 	
-//	std::string rawRequest = client->getRawRequest();
+	std::string request = client->getRawRequest();
 	//parset the HTTP item into a Request object & extract methods and path
-//	Request	req(rawRequest);
+
 	Request	req(request);
 	std::string method = req.getMethod();
 	std::string path = req.getPath();
+	std::string interpreter;
 	
 	std::cout << "📨 " << method << " " << path << std::endl;
 	LocationConfig	location = matchLocation(path, config);
 	
+	//return error page if specified in location block
 	if (location.returnStatusCode != 0) {
 		std::string body = getErrorPageBody(location.returnStatusCode, config);
 		sendHtmlResponse(fd, location.returnStatusCode, body);
+		goto cleanup;
+	}
+	//handle uploads
+	if (method == "POST" && path == "/upload") {
+		std::cout << "handling upload\n" << std::endl;
+		//handle file uploads
+		handleUpload(request, fd, config);
+		goto cleanup;
+	}
+	//check for CGI interpreter (.py, .php, etc.)
+	interpreter = getInterpreter(path, config);
+	if (!interpreter.empty()) {
+		//if CGI, run it
+		handleCgi(req, fd, config, interpreter);
+		goto cleanup;
+	}
+	//default: serve static
+	serveStaticFile(path, fd, config);
+	std::cout << "🧪 getPath: " << req.getPath() << "\n";
+	std::cout << "🧪 getQuery: " << req.getQuery() << "\n";
+	cleanup:
 		close(fd);
 		delete client;
 		clients.erase(it);
 		fds.erase(fds.begin() + i);
 		--i;
-		return;
-	}
-	if (method == "POST" && path == "/upload") {
-		std::cout << "handling upload\n" << std::endl;
-		//handle file uploads
-		handleUpload(request, fd, config);
-	}
-	else {
-		//check for CGI interpreter (.py, .php, etc.)
-		std::string interpreter = getInterpreter(path, config);
-		if (!interpreter.empty())
-			//if CGI, run it
-			handleCgi(req, fd, config, interpreter);
-		else
-			//if not CGI, use default file
-			serveStaticFile(path, fd, config);
-	}
-	close(fd);
-	delete client;
-	clients.erase(it);
-	fds.erase(fds.begin() + i);
-	--i;
 }
