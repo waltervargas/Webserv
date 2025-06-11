@@ -33,6 +33,7 @@ struct	ServerConfig {
 	ServerConfig();
 
 	void	print() const;
+	void	loadErrorPages();
 };
 
 void		applyDefaults(ServerConfig& server);

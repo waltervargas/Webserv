@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:19:59 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/27 15:05:50 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/06/11 14:13:53 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -110,17 +110,14 @@ void	shutDownWebserv(std::vector<ServerSocket*>& serverSockets, std::map<int, Cl
 }
 
 void serveStaticFile(std::string path, int client_fd, const ServerConfig &config) {
-	if (path == "/")
+	if (path.empty() || path == "/")
 		path = "/" + config.index;
-
 	std::string fullPath = config.root + path;
 	std::ifstream file(fullPath.c_str());
 	if (!file.is_open()) {
 		std::cerr << "❌ Static file not found: " << fullPath << std::endl;
 		std::string errorBody = getErrorPageBody(404, config);
-//		std::string response = Response::Build(404, errorBody, "text/html");
 		sendHtmlResponse(client_fd, 404, errorBody);
-//		send(client_fd, response.c_str(), response.size(), 0);
 		return;
 	}
 
@@ -164,10 +161,10 @@ std::string extractBoundary(const std::string& request) {
 * designed specifically to handle binary file uploads correctly.
 */
 void handleUpload(const std::string &request, int client_fd, const ServerConfig &config) {
-
 	// Find the filename first
 	size_t filenamePos = request.find("filename=\"");
 	if (filenamePos == std::string::npos) {
+		sendHtmlResponse(client_fd, 500, getErrorPageBody(500, config));
 		std::cerr << "❌ No filename found in request.\n";
 		return;
 	}
@@ -175,12 +172,14 @@ void handleUpload(const std::string &request, int client_fd, const ServerConfig 
 	size_t filenameStart = filenamePos + 10; // Length of "filename=\""
 	size_t filenameEnd = request.find("\"", filenameStart);
 	if (filenameEnd == std::string::npos) {
+		sendHtmlResponse(client_fd, 500, getErrorPageBody(500, config));
 		std::cerr << "❌ Invalid filename format.\n";
 		return;
 	}
 
 	std::string filename = request.substr(filenameStart, filenameEnd - filenameStart);
 	if (filename.empty()) {
+		sendHtmlResponse(client_fd, 500, getErrorPageBody(500, config));
 		std::cerr << "❌ Empty filename.\n";
 		return;
 	}
@@ -191,23 +190,26 @@ void handleUpload(const std::string &request, int client_fd, const ServerConfig 
 	// then find the blank line that follows it
 	size_t contentTypePos = request.find("Content-Type:", filenameEnd);
 	if (contentTypePos == std::string::npos) {
+		sendHtmlResponse(client_fd, 500, getErrorPageBody(500, config));
 		std::cerr << "❌ No Content-Type header found for file part.\n";
 		return;
 	}
 
 	size_t contentStartMarker = request.find("\r\n\r\n", contentTypePos);
 	if (contentStartMarker == std::string::npos) {
+		sendHtmlResponse(client_fd, 500, getErrorPageBody(500, config));
 		std::cerr << "❌ Could not find blank line after Content-Type.\n";
 		return;
 	}
 
 	// The actual file content starts immediately after the \r\n\r\n
-	size_t contentStart = contentStartMarker + 9;
+	size_t contentStart = contentStartMarker + 4;
 
 	// Extract the boundary string, handling both quoted and unquoted formats
 	std::string rawBoundary = extractBoundary(request);
 	if (rawBoundary.empty()) {
 		std::cerr << "❌ Empty boundary string.\n";
+		sendHtmlResponse(client_fd, 500, getErrorPageBody(500, config));
 		return;
 	}
 
@@ -218,19 +220,19 @@ void handleUpload(const std::string &request, int client_fd, const ServerConfig 
 	// Find the first occurrence of the boundary after the content start
 	size_t contentEnd = request.find(boundary, contentStart);
 	if (contentEnd == std::string::npos) {
+		sendHtmlResponse(client_fd, 500, getErrorPageBody(500, config));
 		std::cerr << "❌ Could not find closing boundary.\n";
 		return;
 	}
 
 	// Check if there's a CRLF before the boundary and adjust for it
-	if (contentEnd >= 2) {
-		if (request[contentEnd-1] == '\n' && request[contentEnd-2] == '\r') {
+	if (contentEnd >= 2 && request[contentEnd - 1] == '\n' && request[contentEnd - 2] == '\r') {
 			contentEnd -= 2; // Adjust to remove CRLF before boundary
-		}
 	}
 
 	// Extract the file content
 	if (contentEnd <= contentStart) {
+		sendHtmlResponse(client_fd, 500, getErrorPageBody(500, config));
 		std::cerr << "❌ Invalid content boundaries (end <= start).\n";
 		return;
 	}
@@ -242,18 +244,19 @@ void handleUpload(const std::string &request, int client_fd, const ServerConfig 
 	const char* fileData = request.c_str() + contentStart;
 
 	// Create a temporary file for debugging/comparison
-	std::string tempPath = "/tmp/upload_debug_" + filename;
+/*	std::string tempPath = "/tmp/upload_debug_" + filename;
 	std::ofstream tempFile(tempPath.c_str(), std::ios::binary);
 	if (tempFile.is_open()) {
 		tempFile.write(fileData, contentLength);
 		tempFile.close();
 		std::cout << "Debug file saved to " << tempPath << std::endl;
-	}
+	}*/
 
 	// Save to final destination
 	std::string filePath = config.root + "/upload/" + filename;
 	std::ofstream outFile(filePath.c_str(), std::ios::binary);
 	if (!outFile.is_open()) {
+		sendHtmlResponse(client_fd, 500, getErrorPageBody(500, config));
 		std::cerr << "❌ Could not open destination file: " << filePath << "\n";
 		return;
 	}
@@ -262,6 +265,7 @@ void handleUpload(const std::string &request, int client_fd, const ServerConfig 
 	outFile.close();
 
 	if (outFile.fail()) {
+		sendHtmlResponse(client_fd, 500, getErrorPageBody(500, config));
 		std::cerr << "❌ Error writing file.\n";
 		return;
 	}
@@ -277,6 +281,7 @@ void handleUpload(const std::string &request, int client_fd, const ServerConfig 
 	if (successFile.is_open()) {
 		body.assign((std::istreambuf_iterator<char>(successFile)),
 					std::istreambuf_iterator<char>());
+		successFile.close();
 	}
 	else
 		body = "<html><body><h1>Upload successful</h1></body></html>";
@@ -291,6 +296,11 @@ void sendHtmlResponse(int fd, int code, const std::string& body) {
 	}
 }
 
+/*
+This function looks up the error code per config map, if found,
+it tries to open the file per the path provided.  If successful, it returns the
+error page otherwise, it generates a simple fallback HTML error page with code and message.
+*/
 std::string	getErrorPageBody(int code, const ServerConfig& config) {
 	std::map<int, std::string>::const_iterator it = config.error_pages.find(code);
 	if (it != config.error_pages.end()) {
@@ -298,14 +308,13 @@ std::string	getErrorPageBody(int code, const ServerConfig& config) {
 		if (!fullPath.empty() && fullPath[fullPath.length() - 1] != '/' && it->second[0])
 			fullPath += "/";
 		fullPath += it->second;
-		std::cerr << "🧪 Looking for: " << fullPath <<std::endl;
-
+		std::cerr << "Looking for: " << fullPath << std::endl;
+		
 		std::ifstream file(fullPath.c_str());
 		if (file.is_open()) {
 			std::string content((std::istreambuf_iterator<char>(file)),
 								std::istreambuf_iterator<char>());
 			file.close();
-			return content;
 		}
 	}
 	std::ostringstream oss;
@@ -314,7 +323,6 @@ std::string	getErrorPageBody(int code, const ServerConfig& config) {
 	oss << "</h1></body></html>";
 	return oss.str();
 }
-
 
 /*
 implemented location block selection using a longest prefix match. That allows more specific paths like:
