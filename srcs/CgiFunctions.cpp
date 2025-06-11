@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/19 15:38:46 by kbolon            #+#    #+#             */
-/*   Updated: 2025/06/10 17:42:30 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/27 11:13:47 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,8 +24,6 @@
 #include <sys/socket.h>
 #include "../include/Request.hpp"
 #include "../include/ServerConfig.hpp"
-#include "../include/HttpStatus.hpp"
-#include "../include/WebServ.hpp"
 
 /*
 find the script/language interpreter by lopping through all config.locations
@@ -71,23 +69,8 @@ void handleCgi(const Request req, int fd, const ServerConfig& config, std::strin
 		std::cerr << "❌ Location for CGI request does not match\n";
 		return;
 	}
-	std::string fullPath = req.getPath();
-	size_t qm = fullPath.find('?');
-	if (qm != std::string::npos)
-		fullPath = fullPath.substr(0, qm);
-
-	std::string relativePath = fullPath.substr(location->path.length());
-
-	std::string scriptPath = location->root;
-	if (!scriptPath.empty() && scriptPath[scriptPath.size() - 1] != '/')
-		scriptPath += '/';
-	scriptPath += relativePath;
-//	std::string relativePath = req.getPath().substr(location->path.length()); // e.g. "/hello.py"
-//	std::string scriptPath = location->root;
-//	if (!scriptPath.empty() && scriptPath[scriptPath.size() - 1] != '/')
-//		scriptPath += '/';
-//	scriptPath += relativePath; // e.g. ./cgi-bin/hello.py
-	std::cout << "👣 Running CGI script: " << scriptPath << " with " << interpreter << std::endl;
+	std::string relativePath = req.getPath().substr(location->path.length()); // e.g. "/hello.py"
+	std::string scriptPath = location->root + relativePath; // e.g. ./cgi-bin/hello.py
 	int	inputPipe[2];
 	int	outputPipe[2];
 	if (pipe(inputPipe) == -1 || pipe(outputPipe) == -1) {
@@ -131,8 +114,6 @@ void handleCgi(const Request req, int fd, const ServerConfig& config, std::strin
 		envStrings.push_back("SCRIPT_NAME=" + scriptPath);
 		envStrings.push_back("CONTENT_LENGTH=" + contentLengthStr);
 		envStrings.push_back("CONTENT_TYPE=text/plain");
-		envStrings.push_back("QUERY_STRING=" + req.getQuery());
-		envStrings.push_back("SCRIPT_NAME=" + relativePath);
 
 		std::vector<char*> envp;
 		for (size_t i = 0; i < envStrings.size(); ++i)
@@ -162,25 +143,10 @@ void handleCgi(const Request req, int fd, const ServerConfig& config, std::strin
 			response.write(buffer, bytes);
 		close(outputPipe[0]);
 		waitpid(pid, NULL, 0); //wait for child
-		std::string body = response.str();
-		size_t headerEnd = body.find("\r\n\r\n");
-		if (headerEnd != std::string::npos)
-			body = body.substr(headerEnd + 4);
-		std::ostringstream fullResponse;
-		sendHtmlResponse(fd, 200, body);
-		
-		std::string responseStr = fullResponse.str();
-		if (responseStr.empty()) {
-			std::string errorBody = getErrorPageBody(500, config);
-			sendHtmlResponse(fd, 500, errorBody);
-			std::cerr << "❌ Empty CGI output — sending 500\n";
-			return;
-		}
+		std::string responseStr = response.str();
 		ssize_t sent = send(fd, responseStr.c_str(), responseStr.length(), 0);
 		if (sent != (ssize_t)responseStr.length())
 			std::cerr << "❌ CGI response was interrupted\n";
-		std::cout << "📤 CGI output:\n" << responseStr << std::endl;
 	}
-	
 }
 

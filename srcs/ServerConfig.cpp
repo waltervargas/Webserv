@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:19:52 by kbolon            #+#    #+#             */
-/*   Updated: 2025/06/10 13:03:50 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/05/27 11:07:21 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,4 +57,3 @@ void	applyDefaults(ServerConfig& server) {
 	if (!server.client_max_body_size)
 		server.client_max_body_size = 1000000;
 }
-
