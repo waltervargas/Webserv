@@ -57,22 +57,3 @@ void	applyDefaults(ServerConfig& server) {
 	if (!server.client_max_body_size)
 		server.client_max_body_size = 1000000;
 }
-
-void	ServerConfig::loadErrorPages() {
-	for (std::map<int, std::string>::iterator it = error_pages.begin(); it != error_pages.end(); ++it)
-	{
-		std::ifstream file(it->second.c_str());
-		if (file) {
-			std::stringstream buffer;
-			buffer << file.rdbuf();
-			error_pages[it->first] = buffer.str();
-			file.close();
-		}
-		else {
-			std::cout << "⚠️ Could not open error page: " << it->first << " => " << it->second << ". Using fallback page.\n";
-			std::ostringstream fallback;
-			fallback << "<html><body><h1>" << it->first << " - Error</h1></body></html>";
-			error_pages[it->first] = fallback.str();
-		}
-	}
-}

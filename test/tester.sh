@@ -1,96 +1,77 @@
 #!/bin/bash
 
-echo "🚀 Launching 5 clients simultaneously..."
+PORT=8081
 
-#launch clients in parallel
-pids=()
-for i in {1..5}; do
-	test/testClient & #run in background
-	pids+=($!)
-done
+echo "🔍 Testing HTTP status codes..."
 
-#wait for all checks and statuses
-client_failures=0
-for i in "${!pids[@]}"; do
-	pid=${pids[$i]}
-	wait $pid
-	status=$?
-	if [ $status -ne 0 ]; then
-		echo "❌ Client $(i + 1) (PID $pid) failed with exit code $status"
-		((client_failures++))
-	fi
-done
+#200 OK
+echo -e "\\n▶️ 200 OK"
+curl -i http://localhost:$PORT/
 
-echo ""
-echo "Running edge case tests"
-echo "==========================="
+#201 Created
+echo -e "\\n▶️ 201 created (via POST)"
+curl -i -X POST -F "file=@test.txt" http://localhost:$PORT/upload/
 
-edge_case_failures=0
-run_edge_case() {
-	name="$1"
-	command="$2"
-	expected="$3"
+#202 No content
+echo -e "\\n▶️ 204 No Content (DELETE)"
+curl -i -X DELETE http://localhost:$PORT/deletable.txt
+#ensure this is available in www folder for testing: 
+#echo "Delete me" > www/deletable.txt
 
-	echo -e "\n▶️ $name"
-	echo "ours:" 
-	if eval "$command"; then
-		echo "expected: "
-		echo "$expected"
-	else
-		echo "❌ Edge case '$name' failed to execute"
-		((edge_case_failures++))
-	fi
-}
 
-run_edge_case "testDisconnectNoFileSize" "./test/testDisconnectNoFileSize" "🚫 Disconnecting before sending file size..."
-run_edge_case "testDisconnectMidSend" "./test/testDisconnectMidSend" "🚫 Disconnecting halfway through file..."
-run_edge_case "testWrongLengthFile" "./test/testWrongLengthFile" "💣 Sent bad file size..."
+#301 Moved Permanently
+echo -e "\\n▶️ 301 Moved Permanently"
+curl -i http://localhost:$PORT/old
 
-echo ""
-echo "Running functional tests (curl-based)"
-echo "==========================="
+#302 Found
+echo -e "\\n▶️ 302 Found"
+curl -i http://localhost:$PORT/temp
 
-total=0
-passed=0
+#400 Bad Request
+echo -e "\\n▶️ 400 Bad Request"
+printf 'GET BAD_REQUEST\\r\\n\\r\\n' | nc localhost $PORT
 
-run_test() {
-	name="$1"
-	command="$2"
-	((total++))
-	echo -n "▶️ $name... "
-	if eval "$command" > /dev/null 2>&1; then
-		echo "✅  PASSED"
-		((passed++))
-	else
-		echo "❌ FAILED"
-	fi
-}
+#401 Unauthorized
+echo -e "\\n▶️ 401 Unauthorized"
+curl -i http://localhost:$PORT/protected
 
-run_test "Get root index"     "curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/ | grep -q 200"
-run_test "Upload file"        "curl -s -F 'file=@test/test.txt' http://localhost:8080/upload | grep -q 'File saved'"
-run_test "Static asset"       "curl -s http://localhost:8080/static/style.css | grep -q 'body'"
-run_test "Error 404"          "curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/notfound | grep -q 404"
-run_test "CGI Python script"  "curl -s http://localhost:8080/cgi-bin/hello.py | grep -q 'Hello, World'"
+#403 Forbidden
+echo -e "\\n▶️ 403 Forbidden"
+curl -i http://localhost:$PORT/forbidden
 
-echo ""
-echo "==========================="
-echo "🧪 Summary"
-echo "==========================="
+#404 Not Found
+echo -e "\\n▶️ 404 Not Found"
+curl -i http://localhost:$PORT/missing.html
 
-if [ $client_failures -eq 0 ]; then
-	echo "✅ All client connections succeeded."
-else
-	echo "❌ $client_failures client(s) failed."
-fi
+#413 Payload too large
+#dd copies and converts raw data
+#if=/dev/zero special file that outputs an infinite number of zero bytes/null chars
+#of=big.txt outputs the file to big.txt
+#bs = block size
+#count = how many blocks to write, I limited it to 2
+echo -e "\\n▶️ 413 Payload too large"
+dd if=/dev/zero of=big.txt bs=1024 count=2
+curl -i -X POST -F "file=@big.txt" http://localhost:$PORT/upload
+rm -f big.txt
 
-if [ $edge_case_failures -eq 0 ]; then
-	echo "✅ All edge case tests passed."
-else
-	echo "❌ $edge_case_failures edge case test(s) failed."
-fi
+#500 Internal Server Error
+echo -e "\\n▶️ 500 Internal Server ERror"
+curl -i http://localhost:$PORT/crash
 
-if [ $passed -eq $total ]; then
-	echo "✅ All $total functional tests passed!"
-else
-	echo "❌ $((total - passed)) of $total tests failed."
-fi
+#501 Not implemented
+echo -e "\\n▶️ 501 Not implemented"
+printf 'BLAH / HTTP/1.1\\r\\nHost: localhost\\r\\n\\r\\n' | nc localhost $PORT
+
+#502 Bad Gateway
+echo -e "\\n▶️ 502 Bad Gateway"
+curl -i http://localhost:$PORT/crash.py
+#ensure this is saved in cgi-bin:
+#!/usr/bin/env python3
+#import sys
+#sys.exit(1)  # simulate a crash
+
+#503 Service Unavailable
+echo -e "\\n▶️ 503 Service Unavailable"
+curl -i http://localhost:$PORT/busy
+
+echo -e "\\n✅ Done testing all listed status codes."

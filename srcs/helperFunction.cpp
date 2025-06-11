@@ -294,7 +294,12 @@ void sendHtmlResponse(int fd, int code, const std::string& body) {
 std::string	getErrorPageBody(int code, const ServerConfig& config) {
 	std::map<int, std::string>::const_iterator it = config.error_pages.find(code);
 	if (it != config.error_pages.end()) {
-		std::string fullPath = config.root + it->second;
+		std::string fullPath = config.root;
+		if (!fullPath.empty() && fullPath[fullPath.length() - 1] != '/' && it->second[0])
+			fullPath += "/";
+		fullPath += it->second;
+		std::cerr << "🧪 Looking for: " << fullPath <<std::endl;
+
 		std::ifstream file(fullPath.c_str());
 		if (file.is_open()) {
 			std::string content((std::istreambuf_iterator<char>(file)),
