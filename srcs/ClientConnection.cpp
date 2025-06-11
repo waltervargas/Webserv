@@ -56,7 +56,7 @@ void ClientConnection::recvFullRequest(int client_fd, const ServerConfig& config
 
 	if (bytes <= 0) {
 		if (bytes == 0)
-			std::cerr << "Client disconnected cleanly\n";
+			return;
 		else {
 			std::cerr << "⚠️ Connection closed or recv failed during recvFullRequest\n";
 			std::string body = getErrorPageBody(500, config);

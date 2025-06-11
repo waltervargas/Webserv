@@ -78,15 +78,22 @@ void handleCgi(const Request req, int fd, const ServerConfig& config, std::strin
 
 	std::string relativePath = fullPath.substr(location->path.length());
 
-	std::string scriptPath = location->root;
+/*	std::string scriptPath = location->root;
 	if (!scriptPath.empty() && scriptPath[scriptPath.size() - 1] != '/')
 		scriptPath += '/';
 	scriptPath += relativePath;
-//	std::string relativePath = req.getPath().substr(location->path.length()); // e.g. "/hello.py"
-//	std::string scriptPath = location->root;
-//	if (!scriptPath.empty() && scriptPath[scriptPath.size() - 1] != '/')
-//		scriptPath += '/';
-//	scriptPath += relativePath; // e.g. ./cgi-bin/hello.py
+*/
+	char	cwd[1024];
+	//get current working directory
+	getcwd(cwd, sizeof(cwd)); 
+	//make absolute base path (required for php)
+	std::string scriptPath = std::string(cwd);
+	if (scriptPath[scriptPath.size() - 1] != '/')
+		scriptPath += '/';
+	scriptPath += location->root;
+	if (scriptPath[scriptPath.size() - 1] != '/')
+		scriptPath += '/';
+	scriptPath += relativePath;	
 	std::cout << "👣 Running CGI script: " << scriptPath << " with " << interpreter << std::endl;
 	int	inputPipe[2];
 	int	outputPipe[2];
@@ -133,12 +140,16 @@ void handleCgi(const Request req, int fd, const ServerConfig& config, std::strin
 		envStrings.push_back("CONTENT_TYPE=text/plain");
 		envStrings.push_back("QUERY_STRING=" + req.getQuery());
 		envStrings.push_back("SCRIPT_NAME=" + relativePath);
+		if (scriptPath.find(".php") != std::string::npos) {
+			envStrings.push_back("SCRIPT_FILENAME=" + scriptPath);
+			envStrings.push_back("REDIRECT_STATUS=200");
+		}
 
 		std::vector<char*> envp;
 		for (size_t i = 0; i < envStrings.size(); ++i)
 			envp.push_back(const_cast<char*>(envStrings[i].c_str()));
 		envp.push_back(NULL);
-
+		std::cerr << "📎 CGI SCRIPT PATH: " << scriptPath << std::endl;
 		execve(pathToInterpreterAndScript[0], pathToInterpreterAndScript, &envp[0]);
 		std::cerr << "❌ execve failed: " << strerror(errno) << std::endl;
 		exit(1);
@@ -168,12 +179,9 @@ void handleCgi(const Request req, int fd, const ServerConfig& config, std::strin
 			body = body.substr(headerEnd + 4);
 		std::ostringstream fullResponse;
 		sendHtmlResponse(fd, 200, body);
-		
+
 		std::string responseStr = fullResponse.str();
 		if (responseStr.empty()) {
-			std::string errorBody = getErrorPageBody(500, config);
-			sendHtmlResponse(fd, 500, errorBody);
-			std::cerr << "❌ Empty CGI output — sending 500\n";
 			return;
 		}
 		ssize_t sent = send(fd, responseStr.c_str(), responseStr.length(), 0);
@@ -181,6 +189,5 @@ void handleCgi(const Request req, int fd, const ServerConfig& config, std::strin
 			std::cerr << "❌ CGI response was interrupted\n";
 		std::cout << "📤 CGI output:\n" << responseStr << std::endl;
 	}
-	
 }
 

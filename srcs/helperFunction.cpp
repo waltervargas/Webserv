@@ -243,15 +243,6 @@ void handleUpload(const std::string &request, int client_fd, const ServerConfig 
 
 	const char* fileData = request.c_str() + contentStart;
 
-	// Create a temporary file for debugging/comparison
-/*	std::string tempPath = "/tmp/upload_debug_" + filename;
-	std::ofstream tempFile(tempPath.c_str(), std::ios::binary);
-	if (tempFile.is_open()) {
-		tempFile.write(fileData, contentLength);
-		tempFile.close();
-		std::cout << "Debug file saved to " << tempPath << std::endl;
-	}*/
-
 	// Save to final destination
 	std::string filePath = config.root + "/upload/" + filename;
 	std::ofstream outFile(filePath.c_str(), std::ios::binary);
@@ -305,7 +296,7 @@ std::string	getErrorPageBody(int code, const ServerConfig& config) {
 	std::map<int, std::string>::const_iterator it = config.error_pages.find(code);
 	if (it != config.error_pages.end()) {
 		std::string fullPath = config.root;
-		if (!fullPath.empty() && fullPath[fullPath.length() - 1] != '/' && it->second[0])
+		if (!fullPath.empty() && fullPath[fullPath.length() - 1] != '/')
 			fullPath += "/";
 		fullPath += it->second;
 		std::cerr << "Looking for: " << fullPath << std::endl;
@@ -315,6 +306,7 @@ std::string	getErrorPageBody(int code, const ServerConfig& config) {
 			std::string content((std::istreambuf_iterator<char>(file)),
 								std::istreambuf_iterator<char>());
 			file.close();
+			return content;
 		}
 	}
 	std::ostringstream oss;
