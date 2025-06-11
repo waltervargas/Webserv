@@ -58,11 +58,3 @@ void	applyDefaults(ServerConfig& server) {
 		server.client_max_body_size = 1000000;
 }
 
-/*void	ServerConfig::loadErrorPages() {
-	for (std::map<int, std::string>::iterator it = error_pages.begin(); it != error_pages.end(); ++it)
-	{
-		std::ifstream file(it->second.c_str());
-		if (!file)
-			std::cout << "⚠️ Could not open error page: " << it->first << " => " << it->second << ". Using fallback page.\n";
-	}
-}*/

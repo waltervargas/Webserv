@@ -56,6 +56,7 @@ void	ConfigParser::parseFile(const std::string& path) {
 			std::istringstream iss(line);
 			ServerConfig	server;
 			parseServerBlock(file, server);
+//			server.loadErrorPages();//loads error pages from files if any specified
 			servers.push_back(server);
 			continue;
 		}

@@ -309,13 +309,18 @@ error page otherwise, it generates a simple fallback HTML error page with code a
 std::string	getErrorPageBody(int code, const ServerConfig& config) {
 	std::map<int, std::string>::const_iterator it = config.error_pages.find(code);
 	if (it != config.error_pages.end()) {
-		std::ifstream file(it->second.c_str());
-		if (file) {
-			std::stringstream buffer;
-			buffer << file.rdbuf();
-			return buffer.str();
+		std::string fullPath = config.root;
+		if (!fullPath.empty() && fullPath[fullPath.length() - 1] != '/' && it->second[0])
+			fullPath += "/";
+		fullPath += it->second;
+		std::cerr << "🧪 Looking for: " << fullPath <<std::endl;
 
-		}
+		std::ifstream file(fullPath.c_str());
+		if (file.is_open()) {
+			std::string content((std::istreambuf_iterator<char>(file)),
+								std::istreambuf_iterator<char>());
+			file.close();
+			return content;
 	}
 	std::ostringstream oss;
 	oss << "<html><body><h1>" << code << " - ";
