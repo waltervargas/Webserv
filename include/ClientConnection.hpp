@@ -34,5 +34,5 @@ class ClientConnection {
     int         getFd() const;
     void        closeConnection();
     bool        isRequestComplete() const;
-    void        recvFullRequest(int client_fd, const ServerConfig& config);
+    int         recvFullRequest(int client_fd, const ServerConfig& config);
 };

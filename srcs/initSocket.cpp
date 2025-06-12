@@ -130,7 +130,15 @@ void	handleExistingClient(int fd, std::vector<pollfd> &fds, std::map<int, Client
 	}
 	ClientConnection* client = it->second;
 	//Step 1: read data from client
-	client->recvFullRequest(fd, config);
+	int result = client->recvFullRequest(fd, config);
+	if (result == 0) {
+		std::cerr << "Client disconnected\n";
+		return;
+	}
+	else if (result == -1) {
+		std::cerr << "Error with connection\n";
+		return;
+	}
 	//Step 2: Wait for all data to be received
 	if (!client->isRequestComplete())
 		return;
@@ -150,30 +158,25 @@ void	handleExistingClient(int fd, std::vector<pollfd> &fds, std::map<int, Client
 	if (location.returnStatusCode != 0) {
 		std::string body = getErrorPageBody(location.returnStatusCode, config);
 		sendHtmlResponse(fd, location.returnStatusCode, body);
-		goto cleanup;
 	}
 	//handle uploads
 	if (method == "POST" && path == "/upload") {
 		std::cout << "handling upload\n" << std::endl;
 		//handle file uploads
 		handleUpload(request, fd, config);
-		goto cleanup;
 	}
 	//check for CGI interpreter (.py, .php, etc.)
 	interpreter = getInterpreter(path, config);
 	if (!interpreter.empty()) {
 		//if CGI, run it
 		handleCgi(req, fd, config, interpreter);
-		goto cleanup;
 	}
 	//default: serve static
 	serveStaticFile(path, fd, config);
 	std::cout << "🧪 getPath: " << req.getPath() << "\n";
-	std::cout << "🧪 getQuery: " << req.getQuery() << "\n";
-	cleanup:
-		close(fd);
-		delete client;
-		clients.erase(it);
-		fds.erase(fds.begin() + i);
-		--i;
+	close(fd);
+	delete client;
+	clients.erase(it);
+	fds.erase(fds.begin() + i);
+	--i;
 }
