@@ -18,7 +18,7 @@ NAME = webserv
 
 
 CXX = c++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -I $(INC_DIR)
+CXXFLAGS = -g -Wall -Wextra -Werror -std=c++98 -I $(INC_DIR)
 RM = rm -rf
 
 #                         Color and Checkmark Definitions                      #

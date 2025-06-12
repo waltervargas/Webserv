@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/19 15:38:46 by kbolon            #+#    #+#             */
-/*   Updated: 2025/06/10 17:42:30 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/06/12 18:26:53 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -171,6 +171,7 @@ void handleCgi(const Request req, int fd, const ServerConfig& config, std::strin
 
 		while((bytes = read(outputPipe[0], buffer, sizeof(buffer))) > 0)
 			response.write(buffer, bytes);
+		std::cerr << "📤 Chunk from CGI (" << bytes << " bytes): " << std::string(buffer, bytes) << std::endl;
 		close(outputPipe[0]);
 		waitpid(pid, NULL, 0); //wait for child
 		std::string body = response.str();

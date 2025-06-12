@@ -1,5 +1,4 @@
 #!/usr/bin/env php-cgi
-
 <?php
 // Required header for CGI
 header("Content-Type: text/html\r\n\r\n");

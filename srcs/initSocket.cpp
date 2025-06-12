@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/21 13:58:50 by kbolon            #+#    #+#             */
-/*   Updated: 2025/06/10 18:20:33 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/06/12 18:34:22 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,7 +72,6 @@ void	runEventLoop(	std::vector<struct pollfd>& fds,
 			int fd = fds[i].fd;
 			
 			if (tempRevent & (POLLERR | POLLHUP | POLLNVAL)) {
-				std::cerr << "❌ Error or hangup on client side\n" << fd << std::endl;
 				close(fd);
 				fds.erase(fds.begin() + i);
 				--i;
@@ -169,7 +168,6 @@ void	handleExistingClient(int fd, std::vector<pollfd> &fds, std::map<int, Client
 	//default: serve static
 	serveStaticFile(path, fd, config);
 	std::cout << "🧪 getPath: " << req.getPath() << "\n";
-	std::cout << "🧪 getQuery: " << req.getQuery() << "\n";
 	cleanup:
 		close(fd);
 		delete client;

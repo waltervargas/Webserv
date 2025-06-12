@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 13:53:30 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/29 13:59:13 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/06/12 17:28:22 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,5 +34,5 @@ class ClientConnection {
     int         getFd() const;
     void        closeConnection();
     bool        isRequestComplete() const;
-    int         recvFullRequest(int client_fd, const ServerConfig& config);
+    void        recvFullRequest(int client_fd, const ServerConfig& config);
 };

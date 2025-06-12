@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:19:29 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/27 15:10:22 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/06/12 17:29:01 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,7 @@ int	init_webserv(std::string configPath) {
 		std::cerr << "❌ Error while parsing config: " << e.what() << std::endl;
 		return 1;
 	}
-	parser.print();
+//	parser.print();
 
 	const	std::vector<ServerConfig>& servers = parser.getServers();
 	if (servers.empty()) {
