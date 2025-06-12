@@ -266,24 +266,16 @@ void handleUpload(const std::string &request, int client_fd, const ServerConfig 
 	// Send success response with proper charset
 	// Create a response with a complete HTML5 document
 	std::string successPath = config.root + "/templates/upload_success.html";
-	std::cerr << "🔍 Looking for upload success template at: " << successPath << std::endl;
 	std::ifstream successFile(successPath.c_str());
 	std::string body;
 
 	if (successFile.is_open()) {
-		try {
-			body.assign((std::istreambuf_iterator<char>(successFile)),
+		body.assign((std::istreambuf_iterator<char>(successFile)),
 					std::istreambuf_iterator<char>());
-		} catch (const std::exception& e) {
-			std::cerr << "❌ Exception while reading success file: " << e.what() << std::endl;
-			body = "<html><body><h1>Upload successful</h1></body></html>";
-		}
 		successFile.close();
 	}
-	else {
-		std::cerr << "❌ Could not open upload success file: " << successPath << "\n";
+	else
 		body = "<html><body><h1>Upload successful</h1></body></html>";
-	}
 	sendHtmlResponse(client_fd,  200, body);
 }
 
