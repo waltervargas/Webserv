@@ -81,9 +81,8 @@ void	runEventLoop(	std::vector<struct pollfd>& fds,
 			if (tempRevent & POLLIN) {
 				if (fdToSocket.count(fd))
 					handleNewClient(fdToSocket[fd], fds, clients, clientToServer);
-				else if (clients.count(fd)) {
+				else if (clients.count(fd))
 					handleExistingClient(fd, fds, clients, i, clientToServer[fd]->getConfig());
-				}
 				else {
 					std::cerr << "⚠️ POLLIN on unknown fd " << fd << std::endl;
 					close(fd);
@@ -122,8 +121,6 @@ parses and handles the HTTP request using the appropriate handler (static, CGI, 
 and then cleans up the client connection.
 */
 void	handleExistingClient(int fd, std::vector<pollfd> &fds, std::map<int, ClientConnection*>& clients, size_t& i, const ServerConfig& config) {
-
-	bool	closeFD = false;
 	//finds the FD in the ClientConnection container
 	std::map<int, ClientConnection*>::iterator it = clients.find(fd);
 	// Defensive check: poll gave us a fd we don't know? Exit function.
@@ -133,15 +130,7 @@ void	handleExistingClient(int fd, std::vector<pollfd> &fds, std::map<int, Client
 	}
 	ClientConnection* client = it->second;
 	//Step 1: read data from client
-	int result = client->recvFullRequest(fd, config);
-	if (result == 0) {
-		std::cerr << "Client disconnected\n";
-		return;
-	}
-	else if (result == -1) {
-		std::cerr << "Error with connection\n";
-		return;
-	}
+	client->recvFullRequest(fd, config);
 	//Step 2: Wait for all data to be received
 	if (!client->isRequestComplete())
 		return;
@@ -161,30 +150,30 @@ void	handleExistingClient(int fd, std::vector<pollfd> &fds, std::map<int, Client
 	if (location.returnStatusCode != 0) {
 		std::string body = getErrorPageBody(location.returnStatusCode, config);
 		sendHtmlResponse(fd, location.returnStatusCode, body);
-		closeFD = true;
+		goto cleanup;
 	}
 	//handle uploads
 	if (method == "POST" && path == "/upload") {
 		std::cout << "handling upload\n" << std::endl;
 		//handle file uploads
 		handleUpload(request, fd, config);
-		closeFD = true;
+		goto cleanup;
 	}
 	//check for CGI interpreter (.py, .php, etc.)
 	interpreter = getInterpreter(path, config);
 	if (!interpreter.empty()) {
 		//if CGI, run it
 		handleCgi(req, fd, config, interpreter);
-		closeFD = true;
+		goto cleanup;
 	}
 	//default: serve static
 	serveStaticFile(path, fd, config);
 	std::cout << "🧪 getPath: " << req.getPath() << "\n";
-	if (closeFD) {
+	std::cout << "🧪 getQuery: " << req.getQuery() << "\n";
+	cleanup:
 		close(fd);
 		delete client;
 		clients.erase(it);
 		fds.erase(fds.begin() + i);
 		--i;
-	}
 }

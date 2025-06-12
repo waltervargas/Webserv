@@ -49,23 +49,20 @@ ClientConnection::~ClientConnection() {
 -gracefully handles slow clients and disconnects
 -exits cleanly after each transfer
 */
-int ClientConnection::recvFullRequest(int client_fd, const ServerConfig& config) {
+void ClientConnection::recvFullRequest(int client_fd, const ServerConfig& config) {
 	//switched to vector to handle images and pdfs
 	char buffer[8192];//8 kb buffer size
 	int bytes = recv(client_fd, buffer, sizeof(buffer), 0);
 
-	//REMOVE THIS BEFORE HANDING IN!!!! NOT ALLOWED TO USE STRERROR
-	std::cerr << "recv failed: " << strerror(errno) << "\n";
-
 	if (bytes <= 0) {
 		if (bytes == 0)
-			return 0;
+			return;
 		else {
 			std::cerr << "⚠️ Connection closed or recv failed during recvFullRequest\n";
 			std::string body = getErrorPageBody(500, config);
 			sendHtmlResponse(client_fd, 500, body);
-			return -1;
 		}
+		return;
 	}
 	this->_buffer.insert(this->_buffer.end(), buffer, buffer + bytes);
 	std::string reqStr(_buffer.begin(), _buffer.end());
@@ -74,7 +71,7 @@ int ClientConnection::recvFullRequest(int client_fd, const ServerConfig& config)
 		std::cerr << "❌ Incomplete headers\n";
 		std::string body = getErrorPageBody(400, config);
 		sendHtmlResponse(client_fd, 400, body);
-		return -1;
+		return;
 	}
 	// Found end of headers, check for Content-Length
 	size_t contentLengthPos = reqStr.find("Content-Length:");
@@ -86,10 +83,9 @@ int ClientConnection::recvFullRequest(int client_fd, const ServerConfig& config)
 			size_t totalContentLength = atoi(lengthStr.c_str());
 			size_t bodyStart = headerEnd + 4;
 			if (_buffer.size() - bodyStart < totalContentLength)
-				return bytes;
+				return;
 		}
 	}
-	return bytes;
 }
 
 bool ClientConnection::isRequestComplete() const {

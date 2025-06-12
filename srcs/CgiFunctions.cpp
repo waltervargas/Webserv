@@ -78,6 +78,11 @@ void handleCgi(const Request req, int fd, const ServerConfig& config, std::strin
 
 	std::string relativePath = fullPath.substr(location->path.length());
 
+/*	std::string scriptPath = location->root;
+	if (!scriptPath.empty() && scriptPath[scriptPath.size() - 1] != '/')
+		scriptPath += '/';
+	scriptPath += relativePath;
+*/
 	char	cwd[1024];
 	//get current working directory
 	getcwd(cwd, sizeof(cwd)); 
