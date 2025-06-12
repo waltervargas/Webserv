@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/19 07:09:51 by kellen            #+#    #+#             */
-/*   Updated: 2025/06/10 18:29:03 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/06/12 18:34:01 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,6 @@ class Request {
     std::string getPath() const;
     std::string getBody() const;
     std::string getQuery() const;
-//    std::string getTarget() const;
     const std::map<std::string, std::string>& getHeaders() const;
   private:
     std::string _method;

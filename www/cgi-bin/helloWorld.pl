@@ -8,18 +8,12 @@ print <<"END";
 <title>CGI with perl</title>
 <style>
   body {
-    background-image: url('BlueMarble.jpg');
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/9/97/The_Earth_seen_from_Apollo_17.jpg');
     background-size: cover;
-    color: white;
+    color: black;
     font-family: Arial, sans-serif;
     text-align: center;
     padding-top: 100px;
-  }
-  h1 {
-    font-size: 3em;
-  }
-  h2 {
-    font-size: 2em;
   }
 </style>
 </head>

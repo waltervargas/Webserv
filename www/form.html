@@ -1,38 +1,40 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title> A basic html form for our Webserv</title>
+		<style>
+        body {
+            background-color: #fcd8f7;
+            font-family: Arial, sans-serif;
+            padding-top: 100px;
+        }
+    </style>
 	</head>
 	<body>
-		<p>It uses standard html GET to get user input</p>
-		<h1>Enter your Name</h1>
+		<h1>CGI: python</h1>
+		<h2>Enter your Name</h2>
 		<form method="GET" action="/cgi-bin/hello.py">
 			<label for="name">Name:</label>
 			<input type = "text" name = "name" id="name">
 			<input type = "submit" value = "Submit" >
-		  <h1>Submit to PHP</h1>
+			<hr>
   		</form>
 	
-		<h1>Submit to PHP</h1>
+		<h1>CGI PHP</h1>
   		<form method="GET" action="/cgi-bin/joke.php">
     		<input type="submit" value="Get a Random Joke">
+			<hr>
 		</form>
 
-		<h1>Ruby Ruby Ruby!!</h1>
+		<h1>CGI: Ruby Ruby Ruby!!</h1>
   		<form method="GET" action="/cgi-bin/weather.rb">
     		<input type="submit" value="What is the weather?">
+			<hr>
 		</form>
 
-		<h1>Perl, you rock!!</h1>
-  		<form method="GET" action="/cgi-bin/hello_world.pl">
+		<h1>CGI: Perl, you rock!!</h1>
+  		<form method="GET" action="/cgi-bin/helloWorld.pl">
     		<input type="submit" value="why...hello!">
+			<hr>
 		</form>
 	</body>
 </html>
-
-<!-- Webserv sets an environment variable: 
-QUERY_STRING=name=Karen
- 
-which can be accessed by our scripts, our simple script will use this input and you
-should see it in the output
--->
