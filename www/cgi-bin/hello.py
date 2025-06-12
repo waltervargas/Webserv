@@ -1,7 +1,22 @@
 #!/usr/bin/env python3
 
 import os
+from PIL import Image
 from urllib.parse import parse_qs
+
+
+
+#get the abosolute path to www/favicon.ico relative to this script
+www_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+favicon_path = os.path.join(www_dir, "favicon.ico")
+
+#check if favicon already exists, browsers automatically send a request
+#to /favicon.ico when loading a site, we need a basic .ico (.ico is legacy default
+#behavior of browsers that suppor backward compatibility)
+if not os.path.exists("../favicon.ico"):
+    img = Image.new("RGBA", (32, 32), (252, 216, 247, 255))
+    # Open your PNG or create a blank one
+    img.save(favicon_path, format="ICO")
 
 query = os.environ.get("QUERY_STRING", "")
 params = parse_qs(query)
