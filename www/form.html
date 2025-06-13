@@ -11,30 +11,29 @@
 	</head>
 	<body>
 		<h1>CGI: python</h1>
-		<h2>Enter your Name</h2>
 		<form method="GET" action="/cgi-bin/hello.py">
-			<label for="name">Name:</label>
-			<input type = "text" name = "name" id="name">
-			<input type = "submit" value = "Submit" >
-			<hr>
-  		</form>
+    		<input type="submit" value="Say hi to python!">
+		</form>
+		<hr>
+		<!-- reset cookie link -->
+		<a href="/cgi-bin/hello.py?reset=1">Clear Cookie</a>
 	
 		<h1>CGI PHP</h1>
   		<form method="GET" action="/cgi-bin/joke.php">
     		<input type="submit" value="Get a Random Joke">
-			<hr>
 		</form>
+		<hr>
 
 		<h1>CGI: Ruby Ruby Ruby!!</h1>
   		<form method="GET" action="/cgi-bin/weather.rb">
     		<input type="submit" value="What is the weather?">
-			<hr>
 		</form>
+		<hr>
 
 		<h1>CGI: Perl, you rock!!</h1>
   		<form method="GET" action="/cgi-bin/helloWorld.pl">
     		<input type="submit" value="why...hello!">
-			<hr>
 		</form>
+		<hr>
 	</body>
 </html>
