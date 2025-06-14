@@ -1,7 +1,8 @@
 #!/usr/bin/env php-cgi
 <?php
-// Required header for CGI
-header("Content-Type: text/html\r\n\r\n");
+// Required CGI header
+echo "Content-Type: text/html; charset=utf-8\r\n";
+echo "\r\n"; // End of headers
 
 // Array of silly jokes
 $jokes = array(
@@ -25,7 +26,7 @@ $joke = $jokes[$index];
             padding-top: 100px;
         }
     </style>
-    </head>
+</head>
 <body>
     <h1>Hello from PHP CGI!</h1>
     <p>Here's a joke for you:</p>
@@ -33,5 +34,10 @@ $joke = $jokes[$index];
     <form method="GET" action="/cgi-bin/joke.php">
         <input type="submit" value="Get Another Joke">
     </form>
+    <div style="margin-top: 20px;">
+        <form method="GET" action="/form.html">
+           <button type="submit">🔙 Back to Forms</button>
+        </form>
+    </div>
 </body>
 </html>
