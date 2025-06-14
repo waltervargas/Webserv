@@ -6,13 +6,14 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/19 07:11:37 by kellen            #+#    #+#             */
-/*   Updated: 2025/06/12 18:34:29 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/06/14 11:18:31 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/Request.hpp"
 #include <string>
 #include <sstream>
+#include <iostream>
 
 /*
 * Constructor that parses the raw HTTP request.
@@ -94,7 +95,6 @@ void Request::parseHeaders(const std::string& headerBlock) {
 			continue;
 		std::string key = line.substr(0, colon);
 		std::string value = line.substr(colon + 1);
-
 		size_t start = value.find_first_not_of(" \t");
 		if (start != std::string::npos)
 			value = value.substr(start);
