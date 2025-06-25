@@ -3,29 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   CgiFunctions.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
+/*   By: kellen <kellen@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/19 15:38:46 by kbolon            #+#    #+#             */
-/*   Updated: 2025/06/14 11:17:26 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/06/24 03:00:07 by kellen           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/wait.h>
-#include <cstdlib>
-#include <cstring>
-//#include <cerrno> //errno
-#include <iostream>
-#include <vector>
-#include <sstream>
-#include <map>
-#include <cstddef>
-#include <sys/socket.h>
-#include "../include/Request.hpp"
-#include "../include/ServerConfig.hpp"
-#include "../include/HttpStatus.hpp"
-#include "../include/WebServ.hpp"
+#include "WebServ.hpp"
 
 /*
 find the script/language interpreter by lopping through all config.locations
@@ -80,14 +65,15 @@ void handleCgi(const Request req, int fd, const ServerConfig& config, std::strin
 
 	char	cwd[1024];
 	//get current working directory
-	getcwd(cwd, sizeof(cwd)); 
+	getcwd(cwd, sizeof(cwd));
 	//make absolute base path (required for php)
 	std::string scriptPath = std::string(cwd);
 	scriptPath += '/';
 	scriptPath += location->root;
-	if (!scriptPath.empty() && scriptPath.back() != '/')
+	// if (!scriptPath.empty() && scriptPath.back() != '/')
+	if (!scriptPath.empty() && scriptPath[scriptPath.size() - 1] != '/')
 		scriptPath += '/';
-	scriptPath += relativePath;	
+	scriptPath += relativePath;
 	std::cout << "👣 Running CGI script: " << scriptPath << " with " << interpreter << std::endl;
 	int	inputPipe[2];
 	int	outputPipe[2];
@@ -111,7 +97,7 @@ void handleCgi(const Request req, int fd, const ServerConfig& config, std::strin
 		dup2(outputPipe[1], STDOUT_FILENO);
 		close(inputPipe[1]);
 		close(outputPipe[0]);
-		
+
 		//prepare list of executable paths (/usr/bin/python3) & script (/www.cgi-bin/script.py)
 		char* pathToInterpreterAndScript[] = {
 			const_cast<char*>(interpreter.c_str()),
@@ -125,7 +111,7 @@ void handleCgi(const Request req, int fd, const ServerConfig& config, std::strin
 		std::ostringstream oss;
 		oss << req.getBody().length();
 		std::string contentLengthStr = oss.str();
-		
+
 		//make "CGI headers but passed through execve() instead of HTTP stream"
 		//pre-set values or ENV variables the CGI uses when running the script
 		//must convert to string for execve
@@ -147,7 +133,7 @@ void handleCgi(const Request req, int fd, const ServerConfig& config, std::strin
 		std::map<std::string, std::string>::const_iterator cookieIt = headers.find("cookie");
 		if (cookieIt != headers.end())
 			envStrings.push_back("HTTP_COOKIE=" + cookieIt->second);
-				
+
 		std::vector<char*> envp;
 		for (size_t i = 0; i < envStrings.size(); ++i)
 			envp.push_back(const_cast<char*>(envStrings[i].c_str()));
@@ -168,7 +154,7 @@ void handleCgi(const Request req, int fd, const ServerConfig& config, std::strin
 		close(inputPipe[1]);
 
 		//read from CGI output and send to client
-		char buffer[4096];
+		char buffer[8192];
 		ssize_t bytes;
 		std::ostringstream response;
 
@@ -177,7 +163,7 @@ void handleCgi(const Request req, int fd, const ServerConfig& config, std::strin
 
 		close(outputPipe[0]);
 		waitpid(pid, NULL, 0); //wait for child
-		
+
 		std::string output = response.str();
 		size_t headerEnd =output.find("\r\n\r\n");
 		if (headerEnd == std::string::npos) {
@@ -187,17 +173,16 @@ void handleCgi(const Request req, int fd, const ServerConfig& config, std::strin
 
 		std::string headers = output.substr(0, headerEnd);
 		std::string body = output.substr(headerEnd + 4);
-		
+
 		std::ostringstream fullResponse;
 		fullResponse << "HTTP/1.1 200 OK\r\n";
 		fullResponse << headers << "\r\n\r\n";
 		fullResponse << body;
 		std::string responseStr = fullResponse.str();
-		
+
 		ssize_t sent = send(fd, responseStr.c_str(), responseStr.length(), 0);
 		if (sent != (ssize_t)output.length())
 			std::cerr << "❌ CGI response was interrupted\n";
 		std::cout << "📤 CGI output:\n" << responseStr << std::endl;
 	}
 }
-

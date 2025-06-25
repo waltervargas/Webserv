@@ -1,0 +1,29 @@
+s<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>400 - Bad Request</title>
+	<link rel="stylesheet" href="/style.css">
+	<link rel="stylesheet" href="/css/error.css">
+</head>
+<body>
+	<div class="error-container">
+		<h1>400</h1>
+		<div class="emoji">🤔</div>
+		<h2>Bad Request</h2>
+		<p>The server couldn't understand your request. Please check and try again.</p>
+		<div class="actions">
+			<a href="javascript:history.back()" class="home-link secondary">← Go Back</a>
+			<a href="/" class="home-link primary" onclick="goHome(event)">🏠 Go Home</a>
+		</div>
+	</div>
+
+	<script>
+		function goHome(event) {
+			event.preventDefault();
+			window.location.href = '/';
+		}
+	</script>
+</body>
+</html>
