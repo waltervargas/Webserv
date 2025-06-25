@@ -6,16 +6,19 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/09 13:53:17 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/27 11:06:44 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/06/25 11:35:27 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#pragma once
+#ifndef SERVERCONFIG_HPP
+# define SERVERCONFIG_HPP
 
 #include "LocationConfig.hpp"
 #include <string>
 #include <vector>
 #include <map>
+
+struct LocationConfig;
 
 struct	ServerConfig {
 		//raw is for testing, ensure we process everything (remove before finishing)
@@ -29,10 +32,13 @@ struct	ServerConfig {
 	long						client_max_body_size;
 	std::map<int, std::string>	error_pages; //error code and path
 	std::vector<LocationConfig>	locations; //location blocks
-	
+
 	ServerConfig();
 
 	void	print() const;
+	void	loadErrorPages();
 };
 
 void		applyDefaults(ServerConfig& server);
+
+#endif // SERVERCONFIG_HPP

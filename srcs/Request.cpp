@@ -6,14 +6,11 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/19 07:11:37 by kellen            #+#    #+#             */
-/*   Updated: 2025/06/14 11:18:31 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/06/25 15:10:30 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../include/Request.hpp"
-#include <string>
-#include <sstream>
-#include <iostream>
+#include "WebServ.hpp"
 
 /*
 * Constructor that parses the raw HTTP request.
@@ -46,7 +43,6 @@ std::string Request::getBody() const {
 	return _raw.substr(pos + 4);
 }
 
-
 std::string Request::getQuery() const {
 	return _query;
 }
@@ -72,37 +68,56 @@ void Request::parse(const std::string& raw) {
 		}
 	}
 
-	// ✅ Extract headers
+	// ✅ Extract headers - FIXED VERSION
 	std::string headerBlock;
 	std::string headerLine;
-	while (std::getline(ss, headerLine) && headerLine != "\r") {
+	while (std::getline(ss, headerLine)) {
+		// Remove trailing \r first
 		if (!headerLine.empty() && headerLine[headerLine.size() - 1] == '\r')
 			headerLine.erase(headerLine.size() - 1);
+
+		// NOW check if line is empty (this marks end of headers)
+		if (headerLine.empty()) {
+			break;  // Empty line means end of headers
+		}
+
 		headerBlock += headerLine + "\n";
 	}
 	parseHeaders(headerBlock);
 }
 
+// Also add debug to parseHeaders method:
 void Request::parseHeaders(const std::string& headerBlock) {
+
 	std::istringstream stream(headerBlock);
 	std::string line;
 
 	while (std::getline(stream, line)) {
-		if (!line.empty() && line[line.size() - 1] == '\r')
+
+		if (!line.empty() && line[line.size() - 1] == '\r') {
 			line.erase(line.size() - 1);
+		}
+
 		size_t colon = line.find(':');
-		if (colon == std::string::npos)
+		if (colon == std::string::npos) {
 			continue;
+		}
+
 		std::string key = line.substr(0, colon);
 		std::string value = line.substr(colon + 1);
+
 		size_t start = value.find_first_not_of(" \t");
 		if (start != std::string::npos)
 			value = value.substr(start);
 
 		for (size_t i = 0; i < key.size(); ++i)
-			key[i] = std::tolower(key[i]);
+			key[i] = std::tolower(static_cast<unsigned char>(key[i]));
 
 		_headers[key] = value;
+	}
+
+	for (std::map<std::string, std::string>::const_iterator it = _headers.begin();
+		it != _headers.end(); ++it) {
 	}
 }
 
@@ -110,3 +125,6 @@ const std::map<std::string, std::string>& Request::getHeaders() const {
 	return _headers;
 }
 
+std::string Request::getRawRequest() const {
+	return _raw;
+}
