@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CgiFunctions.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kellen <kellen@student.42.fr>              +#+  +:+       +#+        */
+/*   By: kbolon <kbolon@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/19 15:38:46 by kbolon            #+#    #+#             */
-/*   Updated: 2025/06/24 03:00:07 by kellen           ###   ########.fr       */
+/*   Updated: 2025/06/26 14:15:39 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,7 +81,7 @@ void handleCgi(const Request req, int fd, const ServerConfig& config, std::strin
 		std::cerr << "❌ Failed to create pipes\n";
 		return;
 	}
-	std::cerr << "💡 Headers received:\n";
+//	std::cerr << "💡 Headers received:\n";
 	const std::map<std::string, std::string>& headers = req.getHeaders();
 	for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
 		std::cerr << it->first << ": " << it->second << std::endl;
