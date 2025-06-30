@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   WebServ.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
+/*   By: kbolon <kbolon@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:19:29 by kbolon            #+#    #+#             */
-/*   Updated: 2025/06/25 15:17:53 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/06/30 15:16:26 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,7 +48,6 @@ int	init_webserv(std::string configPath) {
 	runEventLoop(fds, fdToSocket, clients, clientToServer);
 
 	shutDownWebserv(serverSockets, clients);
-//	std::cout << "👋 Bye bye!\n";
 	return 0;
 }
 

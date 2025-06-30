@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Utils.cpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kellen <kellen@student.42.fr>              +#+  +:+       +#+        */
+/*   By: kbolon <kbolon@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/12 03:08:22 by kellen            #+#    #+#             */
-/*   Updated: 2025/06/24 00:47:10 by kellen           ###   ########.fr       */
+/*   Updated: 2025/06/30 15:14:06 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@ void handleSignal(int signal) {
 		}
 		g_signal = 0;
 		std::cout << "👋 Bye bye!\n";
-		exit(0); // exit the program
+//		exit(0); // exit the program
 	}
 }
 
