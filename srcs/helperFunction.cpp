@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   helperFunction.cpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
+/*   By: kbolon <kbolon@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:19:59 by kbolon            #+#    #+#             */
-/*   Updated: 2025/06/25 15:46:37 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/06/30 17:09:59 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -169,7 +169,8 @@ void serveStaticFile(std::string path, int client_fd, const ServerConfig &config
 
 		if (sendFileChunked(client_fd, fullPath, contentType)) {
 			std::cout << "✅ Chunked transfer completed successfully" << std::endl;
-		} else {
+		} 
+		else {
 			std::cout << "❌ Chunked transfer failed, sending error" << std::endl;
 			std::string errorBody = getErrorPageBody(500, config);
 			sendHtmlResponse(client_fd, 500, errorBody);
@@ -394,17 +395,17 @@ bool useChunkedTransfer(const std::string& fullPath) {
 	size_t fileSize = file.tellg();
 	file.close();
 
-	std::cout << "📏 File size: " << fileSize << " bytes (threshold: " << 1024 * 1024 << ")" << std::endl;
+//	std::cout << "📏 File size: " << fileSize << " bytes (threshold: " << 1024 * 1024 << ")" << std::endl;
 
 	bool useChunked = fileSize > 1024 * 1024;
-	std::cout << "📦 Will use chunked transfer: " << (useChunked ? "YES" : "NO") << std::endl;
+//	std::cout << "📦 Will use chunked transfer: " << (useChunked ? "YES" : "NO") << std::endl;
 
 	return useChunked;
 }
 
 // Send file using chunked transfer encoding
 bool sendFileChunked(int fd, const std::string& fullPath, const std::string& contentType) {
-	std::cout << "📦 Starting chunked transfer for: " << fullPath << std::endl;
+//	std::cout << "📦 Starting chunked transfer for: " << fullPath << std::endl;
 
 	std::ifstream file(fullPath.c_str(), std::ios::binary);
 	if (!file.is_open()) {
@@ -421,7 +422,7 @@ bool sendFileChunked(int fd, const std::string& fullPath, const std::string& con
 	headers << "\r\n";
 
 	std::string headerStr = headers.str();
-	std::cout << "📤 Sending chunked headers (" << headerStr.size() << " bytes)" << std::endl;
+//	std::cout << "📤 Sending chunked headers (" << headerStr.size() << " bytes)" << std::endl;
 
 	ssize_t headerSent = send(fd, headerStr.c_str(), headerStr.size(), 0);
 	if (headerSent != (ssize_t)headerStr.size()) {

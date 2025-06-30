@@ -1,0 +1,28 @@
+download siege
+
+
+cd /tmp
+curl -O https://download.joedog.org/siege/siege-4.1.7.tar.gz
+tar -xzf siege-4.1.7.tar.gz
+cd siege-4.1.7
+./configure --prefix=/home/kbolon/.local
+make
+make install
+
+add this to  ~./zshrc
+export PATH="$HOME/.local/bin:$PATH"
+
+#get webserv started and then type to make sure it works:
+curl http://localhost:8081/empty.html
+
+To stress test: 
+siege -c 25 -t 30S -b http://localhost:8081/empty.html
+
+wait until the end to see if we are 95% or higher per the eval
+
+DELETE
+
+UPLOAD
+
+CGI test for inifinity loop: 
+curl http://localhost:8081/cgi-bin/infinity.py

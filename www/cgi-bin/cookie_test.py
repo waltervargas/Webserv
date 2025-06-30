@@ -3,6 +3,11 @@
 import sys
 import os
 from datetime import datetime
+import time
+
+#for infinite loop testing CGI
+#while True:
+#    time.sleep(1)
 
 # Get environment variables
 cookie = os.environ.get("HTTP_COOKIE", "")
@@ -448,3 +453,4 @@ html_content = f"""
 
 # Output the HTML
 sys.stdout.write(html_content)
+
