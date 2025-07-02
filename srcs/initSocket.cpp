@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/21 13:58:50 by kbolon            #+#    #+#             */
-/*   Updated: 2025/06/25 15:35:09 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/07/02 16:37:33 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,7 +61,7 @@ void	runEventLoop(	std::vector<struct pollfd>& fds,
 		if (ready < 0) {
 			if (errno == EINTR)
 				continue;
-			std::cerr << "❌ Poll() error: " << strerror(errno) << std::endl;
+			std::cerr << "❌ Poll() error" << std::endl;
 			break;
 		}
 		//handle ready FD's (if there is data to read)
@@ -71,7 +71,7 @@ void	runEventLoop(	std::vector<struct pollfd>& fds,
 			int fd = fds[i].fd;
 
 			if (tempRevent & (POLLERR | POLLHUP | POLLNVAL)) {
-				std::cerr << "❌ Error or hangup on client side\n" << fd << std::endl;
+				std::cerr << "❌ Error or hangup on client side: " << fd << std::endl;
 				close(fd);
 				fds.erase(fds.begin() + i);
 				--i;
@@ -167,10 +167,10 @@ void handleExistingClient(int fd, std::vector<pollfd> &fds,
 //				std::cout << "🔄 URL rewrite: " << path << " → " << actualPath << std::endl;
 				path = actualPath;
 			}
-		} else {
+		} //else {
 			// For POST, PUT, DELETE - keep original path
-			std::cout << "📌 Keeping original path for " << method << ": " << path << std::endl;
-		}
+			//std::cout << "📌 Keeping original path for " << method << ": " << path << std::endl;
+		//}
 		// std::string actualPath = rewriteURL(path, config);
 		// if (actualPath != path) {
 		// 	std::cout << "🔄 URL rewrite: " << path << " → " << actualPath << std::endl;
@@ -200,10 +200,14 @@ void handleExistingClient(int fd, std::vector<pollfd> &fds,
 		// Handle different HTTP methods with CORRECT parameter order
 		if (method == "GET") {
 			// handleGET(fd, path, location, config)
-			handleGet(fd, req, path, location, config);
+			if (!handleGet(fd, req, path, location, config)) {
+				handleClientCleanup(fd, fds, clients, i);
+			}
 		} else if (method == "POST") {
 			// handlePOST(fd, req, path, location, config)
-			handlePost(fd, req, path, location, config);
+			if (!handlePost(fd, req, path, location, config)) {
+				handleClientCleanup(fd, fds, clients, i);
+			}
 		} else if (method == "PUT") {
 			// handlePUT(fd, req, path, location, config)
 			handlePut(fd, req, path, location, config);
