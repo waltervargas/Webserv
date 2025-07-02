@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/14 02:17:48 by kbolon            #+#    #+#             */
-/*   Updated: 2025/05/14 16:47:57 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/07/02 15:17:04 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -148,13 +148,13 @@ int main(int ac, char **av) {
 		while (file.read(buffer, sizeof(buffer))) {
 			send(clientSocket, buffer, sizeof(buffer), 0);
 		}
-		std::cout << "Sent chunk of " << file.gcount() << " bytes\n";
+		//std::cout << "Sent chunk of " << file.gcount() << " bytes\n";
 		//gcount() Returns the number of characters extracted by the last 
 		//unformatted input operation performed on the object.
 		send(clientSocket, buffer, file.gcount(), 0);
-		std::cout << "Sent chunk of 2" << file.gcount() << " bytes\n";
+		//std::cout << "Sent chunk of 2" << file.gcount() << " bytes\n";
 		file.close();
-		std::cout << "Sent: " << fileName << std::endl;
+		//std::cout << "Sent: " << fileName << std::endl;
 		usleep(100000); //pause for 0.1 seconds
 	}
 	closedir(dir);

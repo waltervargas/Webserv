@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/15 17:27:43 by keramos-          #+#    #+#             */
-/*   Updated: 2025/06/25 14:19:27 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/07/02 15:43:03 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,8 +87,8 @@ void		handleNewClient(ServerSocket* server, std::vector<pollfd> &fds, std::map<i
 				std::map<int, ServerSocket*>& clientToServer);
 LocationConfig	matchLocation(const std::string& path, const ServerConfig& config);
 // Add function declarations to WebServ.hpp
-void		handleGet(int fd, const Request& req, const std::string& path, const LocationConfig& location, const ServerConfig& config);
-void		handlePost(int fd, const Request& req, const std::string& path, const LocationConfig& location, const ServerConfig& config);
+bool		handleGet(int fd, const Request& req, const std::string& path, const LocationConfig& location, const ServerConfig& config);
+bool		handlePost(int fd, const Request& req, const std::string& path, const LocationConfig& location, const ServerConfig& config);
 void		handlePut(int fd, const Request& req, const std::string& path, const LocationConfig& location, const ServerConfig& config);
 void		handleDelete(int fd, const std::string& path, const LocationConfig& location, const ServerConfig& config);
 void		handleHead(int fd, const std::string& path, const LocationConfig& location, const ServerConfig& config);
@@ -101,7 +101,7 @@ void		createDirectoryIfNotExists(const std::string& path);
 std::string	getContentType(const std::string& path);
 std::string	generateSimpleDirectoryListing(const std::string& dirPath, const std::string& urlPath);
 void		handleSimpleUpload(const std::string& request, int client_fd, const ServerConfig& config);
-void		handleSimpleCGI(int fd, const Request& req, const std::string& path, const ServerConfig& config);
+bool		handleSimpleCGI(int fd, const Request& req, const std::string& path, const ServerConfig& config);
 
 
 // URL Rewriting (if you haven't added this yet)

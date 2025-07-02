@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   helperFunction.cpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kbolon <kbolon@student.42.fr>              +#+  +:+       +#+        */
+/*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:19:59 by kbolon            #+#    #+#             */
-/*   Updated: 2025/06/30 17:09:59 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/07/02 16:10:09 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -179,7 +179,7 @@ void serveStaticFile(std::string path, int client_fd, const ServerConfig &config
 	}
 
 	// Use regular transfer for smaller files
-	std::cout << "📄 Using REGULAR TRANSFER for normal-sized file" << std::endl;
+	//std::cout << "📄 Using REGULAR TRANSFER for normal-sized file" << std::endl;
 
 	std::ifstream file(fullPath.c_str(), std::ios::binary);
 	if (!file.is_open()) {
@@ -197,10 +197,11 @@ void serveStaticFile(std::string path, int client_fd, const ServerConfig &config
 	std::string response = Response::build(200, body, contentType);
 	ssize_t sent = send(client_fd, response.c_str(), response.size(), 0);
 	if (sent != (ssize_t)response.size()) {
-			std::cerr << "❌ Failed to send response for status code: " << sent << " of " << response.size() << " bytes\n";
-	} else {
-		std::cout << "✅ Successfully served: " << fullPath << " (" << body.size() << " bytes)" << std::endl;
-	}
+			//std::cerr << "❌ Failed to send response for status code: " << sent << " of " << response.size() << " bytes\n";
+	} 
+	//else {
+	//	std::cout << "✅ Successfully served: " << fullPath << " (" << body.size() << " bytes)" << std::endl;
+	//}
 }
 
 std::string extractBoundary(const std::string& request) {
@@ -242,9 +243,9 @@ void sendHtmlResponse(int fd, int code, const std::string& body) {
 
 	std::string response = Response::build(code, body, "text/html");
 	ssize_t sent = send(fd, response.c_str(), response.size(), 0);
-	if (sent != (ssize_t)response.size()) {
+	if (sent != (ssize_t)response.size())
 		std::cerr << "❌ Failed to send response for status code: " << sent << " of " << response.size() << " bytes\n";
-	}
+
 }
 
 /*

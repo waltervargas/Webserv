@@ -22,7 +22,70 @@ wait until the end to see if we are 95% or higher per the eval
 
 DELETE
 
-UPLOAD
 
-CGI test for inifinity loop: 
+
+CGI TEST INFINITY LOOP (should time out)
 curl http://localhost:8081/cgi-bin/infinity.py
+
+
+UPLOAD
+# TEST SMALL FILE SIZE
+//we can't use the one from the evaluation sheet because we made our server too smart, we inputted
+another test for the body.  The example in the 
+curl -F "file=@test/test.txt" http://localhost:8081/upload
+
+# TEST FOR FILES GREATER THAN MAX_CLIENT_SIZE
+from root directory of project (create large file to upload):
+dd if=/dev/zero of=bigfile.txt bs=1M count=2
+#make it readable
+chmod +r test/bigfile.txt
+
+OPEN DEFAULT INDEX
+curl http://localhost:8081/
+
+GET:
+curl -v http://localhost:8081/upload/test.txt
+should give: 200 if exists and 404 if file doesn't exist
+
+POST:
+curl -i -F "file=@test/test.txt" http://localhost:8081/upload
+should give: 200 OK or 201 Created
+
+DELETE: 
+curl -i -X DELETE http://localhost:8081/upload/test.txt
+should give: 200 OK,  404 if not exists, or 405 if method not allowed
+
+BOGUS METHOD:
+curl -X BOGUS http://localhost:8081/
+should give: HTTP/1.1 501 Not Implemented
+
+CGI:
+
+create test file called echo.py
+//////////////
+#!/usr/bin/env python3
+import sys
+
+print("Content-Type: text/plain\n")
+
+# Read and print POST data from stdin
+body = sys.stdin.read()
+print("Hello from CGI!")
+print(body)
+///////////////////
+
+
+Make it executable:
+chmod +x www/cgi-bin/echo.py
+
+TEST GET WITH CGI:
+curl -i http://localhost:8081/cgi-bin/echo.py
+
+TEST POST WITH CGI: 
+curl -i -X POST -d "name=Karen" http://localhost:8081/cgi-bin/echo.py
+
+CHECK WITH BROWSER:
+curl -i http://localhost:8081/this/does/not/exist
+
+TEST REDIRECTS:
+curl -iL http://localhost:8081/redirect
