@@ -89,3 +89,4 @@ curl -i http://localhost:8081/this/does/not/exist
 
 TEST REDIRECTS:
 curl -iL http://localhost:8081/redirect
+should return 301 and the redirect page
