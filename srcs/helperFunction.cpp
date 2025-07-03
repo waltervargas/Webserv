@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   helperFunction.cpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
+/*   By: kellen <kellen@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:19:59 by kbolon            #+#    #+#             */
-/*   Updated: 2025/07/03 18:21:56 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/07/03 20:39:37 by kellen           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -181,7 +181,7 @@ void serveStaticFile(std::string path, int client_fd, const ServerConfig &config
 
 		if (sendFileChunked(client_fd, fullPath, contentType)) {
 			std::cout << "✅ Chunked transfer completed successfully" << std::endl;
-		} 
+		}
 		else {
 			std::cout << "❌ Chunked transfer failed, sending error" << std::endl;
 			std::string errorBody = getErrorPageBody(500, config);

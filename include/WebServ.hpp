@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   WebServ.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
+/*   By: kellen <kellen@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/15 17:27:43 by keramos-          #+#    #+#             */
-/*   Updated: 2025/07/03 18:17:54 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/07/03 21:17:25 by kellen           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -94,6 +94,7 @@ bool		handlePost(int fd, const Request& req, const std::string& path, const Loca
 void		handlePut(int fd, const Request& req, const std::string& path, const LocationConfig& location, const ServerConfig& config);
 void		handleDelete(int fd, const std::string& path, const LocationConfig& location, const ServerConfig& config);
 bool		handleHead(int fd, const std::string& path, const LocationConfig& location, const ServerConfig& config);
+bool		handleRedirect(int fd, const LocationConfig& location, const ServerConfig& config);
 
 // Helper Functions
 void		handleClientCleanup(int fd, std::vector<pollfd>& fds, std::map<int, ClientConnection*>& clients, size_t& i);

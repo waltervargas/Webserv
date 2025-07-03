@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   initSocket.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
+/*   By: kellen <kellen@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/21 13:58:50 by kbolon            #+#    #+#             */
-/*   Updated: 2025/07/03 18:18:08 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/07/03 22:00:38 by kellen           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -179,6 +179,40 @@ void handleExistingClient(int fd, std::vector<pollfd> &fds,
 
 		// Find matching location
 		LocationConfig location = matchLocation(path, config);
+
+		// 🔄 CHECK FOR REDIRECTS FIRST (before method validation)
+		if (!location.redirect.empty()) {
+			std::cout << "🔄 Found redirect for " << path << " -> " << location.redirect << std::endl;
+
+			// Determine the correct status code
+			int statusCode = 302; // Default to 302 (temporary redirect)
+
+			// If return status code is specified and it's a 3xx redirect code, use it
+			if (location.returnStatusCode >= 300 && location.returnStatusCode < 400) {
+				statusCode = location.returnStatusCode;
+				std::cout << "   Using specified status code: " << statusCode << std::endl;
+			} else {
+				std::cout << "   Using default status code: " << statusCode << " (temporary redirect)" << std::endl;
+			}
+
+			// Build redirect response using your HttpStatus function
+			std::ostringstream response;
+			response << "HTTP/1.1 " << statusCode << " " << HttpStatus::getStatusMessages(statusCode) << "\r\n";
+			response << "Location: " << location.redirect << "\r\n";
+			response << "Connection: close\r\n";
+			response << "\r\n";
+
+			std::string responseStr = response.str();
+			std::cout << "Sending redirect response:\n" << responseStr << std::endl;
+
+			if (!safeSend(fd, responseStr)) {
+				handleClientCleanup(fd, fds, clients, i);
+				return;
+			}
+
+			handleClientCleanup(fd, fds, clients, i);
+			return;
+		}
 
 		// Check if method is allowed in this location
 		bool methodAllowed = false;

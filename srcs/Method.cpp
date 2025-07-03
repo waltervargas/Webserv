@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Method.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
+/*   By: kellen <kellen@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/11 23:13:55 by kellen            #+#    #+#             */
-/*   Updated: 2025/07/03 18:18:51 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/07/03 22:50:35 by kellen           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@ bool handleGet(int fd, const Request& req, const std::string& path, const Locati
 
 	// First: Check if this is a CGI request FIRST (highest priority)
 	if (path.find("/cgi-bin/") == 0) {
-		
+
 		// Call our improved handleSimpleCGI function
 		if (!handleSimpleCGI(fd, req, path, config)) {
 			return false;
@@ -60,7 +60,7 @@ bool handleGet(int fd, const Request& req, const std::string& path, const Locati
 				return false;
 			}
 		}
-	} 
+	}
 	else{
 		// Serve static file
 		serveStaticFile(path, fd, config);
@@ -75,9 +75,9 @@ bool handlePost(int fd, const Request& req, const std::string& path, const Locat
 	(void)location; // Suppress unused warning, as location is not used in this example
 	if (req.getBody().size() > static_cast<size_t>(config.client_max_body_size)) {
 		std::cerr << "❌ Request body exceeds client_max_body_size\n";
-    	std::string errorBody = getErrorPageBody(413, config); // 413 Payload Too Large
-    	sendHtmlResponse(fd, 413, errorBody);
-    	return false;
+		std::string errorBody = getErrorPageBody(413, config); // 413 Payload Too Large
+		sendHtmlResponse(fd, 413, errorBody);
+		return false;
 	}
 	// Check if this is a file upload
 	if (path == "/upload" || path.find("/upload") == 0) {
@@ -92,7 +92,7 @@ bool handlePost(int fd, const Request& req, const std::string& path, const Locat
 	if (path.find("/cgi-bin/") == 0) {
 		std::cout << "🔧 This is a CGI POST request, calling handleSimpleCGI" << std::endl;
 		// Simple CGI execution - you can expand this
-		if (!handleSimpleCGI(fd, req, path, config)){		
+		if (!handleSimpleCGI(fd, req, path, config)){
 			return false;
 		}
 	}
@@ -322,7 +322,7 @@ bool handleHead(int fd, const std::string& path, const LocationConfig& location,
 		std::string headers = Response::buildHeader(404, 0, "text/html");
 		if (!safeSend(fd, headers))
 			return false;
-		
+
 		return true;
 	}
 
