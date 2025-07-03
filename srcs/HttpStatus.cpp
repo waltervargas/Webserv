@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpStatus.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kellen <kellen@student.42.fr>              +#+  +:+       +#+        */
+/*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/21 14:24:24 by kbolon            #+#    #+#             */
-/*   Updated: 2025/06/12 17:55:48 by kellen           ###   ########.fr       */
+/*   Updated: 2025/07/03 16:06:22 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,7 @@ const std::map<int, std::string>& HttpStatus::statusMessages() {
 		statusList[405] = "Method Not Allowed";
 		statusList[409] = "Conflict";
 		statusList[413] = "Payload Too Large";
+		statusList[418] = "I'm a teapot";  // RFC 2324 - April Fools' Day joke
 		statusList[500] = "Internal Server Error";
 		statusList[501] = "Not Implemented";
 		statusList[502] = "Bad Gateway";

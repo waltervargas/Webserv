@@ -6,14 +6,14 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/11 23:13:55 by kellen            #+#    #+#             */
-/*   Updated: 2025/07/02 16:04:16 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/07/03 18:18:51 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "WebServ.hpp"
 
 bool handleGet(int fd, const Request& req, const std::string& path, const LocationConfig& location, const ServerConfig& config) {
-//	std::cout << "📥 Handling GET request for " << path << std::endl;
+	std::cout << "📥 Handling GET request for " << path << std::endl;
 
 	// First: Check if this is a CGI request FIRST (highest priority)
 	if (path.find("/cgi-bin/") == 0) {
@@ -31,11 +31,8 @@ bool handleGet(int fd, const Request& req, const std::string& path, const Locati
 
 		// Send JSON response
 		std::string response = Response::build(200, jsonResponse, "application/json");
-		ssize_t sent = send(fd, response.c_str(), response.size(), 0);
-		if (sent != (ssize_t)response.size()) {
-			std::cerr << "❌ Failed to send JSON response\n";
+		if (!safeSend(fd, response))
 			return false;
-		}
 		return true;
 	}
 
@@ -60,6 +57,7 @@ bool handleGet(int fd, const Request& req, const std::string& path, const Locati
 				std::cout << "❌ Directory access forbidden: " << path << std::endl;
 				std::string body = getErrorPageBody(403, config);
 				sendHtmlResponse(fd, 403, body);
+				return false;
 			}
 		}
 	} 
@@ -311,7 +309,7 @@ void handleDelete(int fd, const std::string& path, const LocationConfig& locatio
 	sendHtmlResponse(fd, 200, responseBody); // 200 OK
 }
 
-void handleHead(int fd, const std::string& path, const LocationConfig& location, const ServerConfig& config) {
+bool handleHead(int fd, const std::string& path, const LocationConfig& location, const ServerConfig& config) {
 	std::cout << "📋 Handling HEAD request for " << path << std::endl;
 	//for now
 	(void)config;  // Add this line to suppress warning
@@ -322,16 +320,19 @@ void handleHead(int fd, const std::string& path, const LocationConfig& location,
 	if (!fileExists(fullPath)) {
 		// Send 404 headers only (no body)
 		std::string headers = Response::buildHeader(404, 0, "text/html");
-		send(fd, headers.c_str(), headers.size(), 0);
-		return;
+		if (!safeSend(fd, headers))
+			return false;
+		
+		return true;
 	}
 
 	// Get file info
 	std::ifstream file(fullPath.c_str(), std::ios::binary | std::ios::ate);
 	if (!file.is_open()) {
 		std::string headers = Response::buildHeader(500, 0, "text/html");
-		send(fd, headers.c_str(), headers.size(), 0);
-		return;
+		if (!safeSend(fd, headers))
+			return false;
+		return true;
 	}
 
 	size_t fileSize = file.tellg();
@@ -342,9 +343,9 @@ void handleHead(int fd, const std::string& path, const LocationConfig& location,
 
 	// Send headers only (no body for HEAD request)
 	std::string headers = Response::buildHeader(200, fileSize, contentType);
-	send(fd, headers.c_str(), headers.size(), 0);
-
-	std::cout << "✅ HEAD response sent for " << path << " (size: " << fileSize << ")" << std::endl;
+	if (!safeSend(fd, headers))
+		return false;
+	return true;
 }
 
 // Helper functions
@@ -406,7 +407,6 @@ std::string generateSimpleDirectoryListing(const std::string& dirPath, const std
 }
 
 std::string rewriteURL(const std::string& path, const ServerConfig& config, const std::string& method) {
-//	std::cout << "🔄 Rewriting URL: " << path << " with method: " << method << std::endl;
 
 	// Handle root path
 	if (path == "/") {
@@ -468,7 +468,6 @@ std::string rewriteURL(const std::string& path, const ServerConfig& config, cons
 }
 
 void handleSimpleUpload(const std::string& request, int client_fd, const ServerConfig& config) {
-//	std::cout << "🚀 Starting ENHANCED multiple file upload process..." << std::endl;
 
 	// Step 1: Extract boundary
 	std::string boundary = extractBoundary(request);
@@ -478,8 +477,6 @@ void handleSimpleUpload(const std::string& request, int client_fd, const ServerC
 		return;
 	}
 
-//	std::cout << "🔍 Using boundary: " << boundary << std::endl;
-
 	// Step 2: Process all files using YOUR existing functions
 	std::vector<std::string> successfulUploads;
 	std::vector<std::string> failedUploads;
@@ -488,14 +485,13 @@ void handleSimpleUpload(const std::string& request, int client_fd, const ServerC
 	int fileCount = 0;
 
 	while (true) {
-		// Use YOUR existing function to find next file section
+		//find next file section
 		size_t sectionStart = findNextFileSection(request, boundary, currentPos);
 		if (sectionStart == std::string::npos) {
 			break; // No more files found
 		}
 
 		fileCount++;
-//		std::cout << "📁 Processing file #" << fileCount << "..." << std::endl;
 
 		// Find the end of this section (next boundary)
 		std::string fullBoundary = "--" + boundary;
@@ -504,7 +500,7 @@ void handleSimpleUpload(const std::string& request, int client_fd, const ServerC
 			sectionEnd = request.length();
 		}
 
-		// Use YOUR existing function to extract filename
+		//extract filename
 		std::string filename;
 		if (!extractFilenameFromSection(request, sectionStart, sectionEnd, filename)) {
 			std::cerr << "❌ Could not extract filename from section " << fileCount << std::endl;
@@ -512,9 +508,7 @@ void handleSimpleUpload(const std::string& request, int client_fd, const ServerC
 			continue;
 		}
 
-//		std::cout << "📄 Found file: " << filename << std::endl;
-
-		// Use YOUR existing function to find content boundaries
+		//find content boundaries
 		size_t contentStart, contentLength;
 		if (!findFileContentInSection(request, sectionStart, sectionEnd, contentStart, contentLength)) {
 			std::cerr << "❌ Could not find content boundaries for: " << filename << std::endl;
@@ -523,7 +517,7 @@ void handleSimpleUpload(const std::string& request, int client_fd, const ServerC
 			continue;
 		}
 
-		// Step 3: Validate file size using YOUR existing function
+		// Step 3: Validate file size
 		if (!validateUploadFileSize(contentLength, config)) {
 			std::cerr << "❌ File too large: " << filename << " (" << contentLength << " bytes)" << std::endl;
 			failedUploads.push_back(filename);
@@ -531,7 +525,7 @@ void handleSimpleUpload(const std::string& request, int client_fd, const ServerC
 			continue;
 		}
 
-		// Step 4: Save the file using YOUR existing function
+		// Step 4: Save the file
 		std::string filePath = config.root + "/upload/" + filename;
 		if (writeFileToServer(request, contentStart, contentLength, filePath)) {
 			std::cout << "✅ Successfully uploaded: " << filename << std::endl;
@@ -545,7 +539,7 @@ void handleSimpleUpload(const std::string& request, int client_fd, const ServerC
 		currentPos = sectionEnd;
 	}
 
-	// Step 5: Use YOUR existing response system
+	// Step 5: Response system
 	if (successfulUploads.empty() && failedUploads.empty()) {
 		std::cerr << "❌ No files found in request" << std::endl;
 		sendHtmlResponse(client_fd, 400, getErrorPageBody(400, config));
@@ -553,7 +547,7 @@ void handleSimpleUpload(const std::string& request, int client_fd, const ServerC
 	}
 
 	if (failedUploads.empty()) {
-		// All files uploaded successfully - use YOUR existing success template
+		// All files uploaded successfully
 		std::string filename = (successfulUploads.size() == 1) ?
 							successfulUploads[0] :
 							(intToStr(successfulUploads.size()) + " files");
@@ -562,7 +556,7 @@ void handleSimpleUpload(const std::string& request, int client_fd, const ServerC
 		sendHtmlResponse(client_fd, 200, successResponse);
 		std::cout << "📤 All " << successfulUploads.size() << " files uploaded successfully!" << std::endl;
 	} else {
-		// Some or all files failed - use YOUR existing error system
+		// Some or all files failed - error system
 		std::string errorBody = getErrorPageBody(400, config);
 		sendHtmlResponse(client_fd, 400, errorBody);
 		std::cout << "❌ Upload failed for " << failedUploads.size() << " files" << std::endl;

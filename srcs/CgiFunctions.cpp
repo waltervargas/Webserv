@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/19 15:38:46 by kbolon            #+#    #+#             */
-/*   Updated: 2025/07/02 15:45:10 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/07/03 18:11:10 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -86,21 +86,14 @@ bool handleSimpleCGI(int fd, const Request& req, const std::string& path, const 
 	}
 
 	// Step 5: Send the script output directly to the client
-//	std::cout << "📤 Sending script output to client" << std::endl;
-	ssize_t sent = send(fd, scriptOutput.c_str(), scriptOutput.size(), 0);
-	if (sent != (ssize_t)scriptOutput.size()) {
-		std::cerr << "❌ Failed to send complete CGI response" << std::endl;
-		close(fd);
+	if (!safeSend(fd, scriptOutput)) {
 		return false;
-	} 
-//	else
-//		std::cout << "✅ CGI response sent successfully!" << std::endl;
+	}
 	return true;
 }
 
 // Helper function to execute the script
 std::string executeScript(const std::string& interpreter, const std::string& scriptPath, const Request& req) {
-//	std::cout << "⚙️ Executing: " << interpreter << " " << scriptPath << std::endl;
 
 	// Create pipes for communication
 	int outputPipe[2];

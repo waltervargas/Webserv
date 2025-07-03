@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/21 13:58:50 by kbolon            #+#    #+#             */
-/*   Updated: 2025/07/02 16:37:33 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/07/03 18:18:08 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -216,7 +216,9 @@ void handleExistingClient(int fd, std::vector<pollfd> &fds,
 			handleDelete(fd, path, location, config);
 		} else if (method == "HEAD") {
 			// handleHEAD(fd, path, location, config)
-			handleHead(fd, path, location, config);
+			if (!handleHead(fd, path, location, config)){
+				handleClientCleanup(fd, fds, clients, i);
+			}
 		} else {
 			std::cout << "❌ Method " << method << " not implemented" << std::endl;
 			std::string body = getErrorPageBody(501, config); // Not Implemented

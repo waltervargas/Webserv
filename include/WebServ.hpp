@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/15 17:27:43 by keramos-          #+#    #+#             */
-/*   Updated: 2025/07/02 15:43:03 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/07/03 18:17:54 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,6 +66,8 @@ std::string	getContentType(const std::string& path);
 int			safe_socket(int domain, int type, int protocol);
 bool		safe_bind(int fd, sockaddr_in & addr);
 bool		safe_listen(int socket, int backlog);
+bool 		safeSend(int fd, const std::string& data);
+bool 		sendAll(int fd, const char* buffer, size_t length);
 void		shutDownWebserv(std::vector<ServerSocket*>& serverSockets, std::map<int, ClientConnection*>& clients);
 void 		handleUpload(const std::string &request, int client_fd, const ServerConfig &config);
 void 		serveStaticFile(std::string path, int client_fd, const ServerConfig &config);
@@ -91,7 +93,7 @@ bool		handleGet(int fd, const Request& req, const std::string& path, const Locat
 bool		handlePost(int fd, const Request& req, const std::string& path, const LocationConfig& location, const ServerConfig& config);
 void		handlePut(int fd, const Request& req, const std::string& path, const LocationConfig& location, const ServerConfig& config);
 void		handleDelete(int fd, const std::string& path, const LocationConfig& location, const ServerConfig& config);
-void		handleHead(int fd, const std::string& path, const LocationConfig& location, const ServerConfig& config);
+bool		handleHead(int fd, const std::string& path, const LocationConfig& location, const ServerConfig& config);
 
 // Helper Functions
 void		handleClientCleanup(int fd, std::vector<pollfd>& fds, std::map<int, ClientConnection*>& clients, size_t& i);
