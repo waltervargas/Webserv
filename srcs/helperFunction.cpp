@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:19:59 by kbolon            #+#    #+#             */
-/*   Updated: 2025/07/04 12:57:06 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/07/04 15:18:38 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -464,7 +464,7 @@ bool sendFileChunked(int fd, const std::string& fullPath, const std::string& con
 
 		totalBytesSent += bytesRead;
 	}
-
+	
 	file.close();
 
 	// Send final chunk (size 0) to indicate end

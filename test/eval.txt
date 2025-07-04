@@ -20,10 +20,6 @@ siege -c 25 -t 30S -b http://localhost:8081/empty.html
 
 wait until the end to see if we are 95% or higher per the eval
 
-DELETE
-
-
-
 CGI TEST INFINITY LOOP (should time out)
 curl -i http://localhost:8081/cgi-bin/infinity.py
 
@@ -90,3 +86,7 @@ curl -i http://localhost:8081/this/does/not/exist
 TEST REDIRECTS:
 curl -iL http://localhost:8081/redirect
 should return 302 and the redirect page
+
+LIST DIRECTORIES
+can list any that are in config file as long as autoindex is one
+i.e.: http://localhost:8081/upload/
