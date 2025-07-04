@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   initSocket.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kbolon <kbolon@student.42.fr>              +#+  +:+       +#+        */
+/*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/21 13:58:50 by kbolon            #+#    #+#             */
-/*   Updated: 2025/07/04 18:14:35 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/07/04 19:52:56 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,9 +57,7 @@ void	runEventLoop(	std::vector<struct pollfd>& fds,
 	while (g_signal != 0) {
 		//safe to call poll()
 		// revents will be automatically set by poll(), no need to reset manually
-		std::cerr << "Before Poll" << std::endl;
 		int ready = poll(&fds[0], fds.size(), -1);
-		std::cerr << "After Poll" << std::endl;
 		if (ready < 0) {
 			if (errno == EINTR)
 				continue;
