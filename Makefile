@@ -18,7 +18,7 @@ NAME = webserv
 
 
 CXX = c++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -g
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98
 INCLUDES = -I include
 RM = rm -rf
 
