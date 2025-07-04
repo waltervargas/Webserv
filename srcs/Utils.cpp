@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/12 03:08:22 by kellen            #+#    #+#             */
-/*   Updated: 2025/06/30 15:14:06 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/07/04 14:30:31 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -360,7 +360,7 @@ bool parseArguments(int argc, char **argv, std::string &configPath) {
 
 	if (argc == 1) {
 		configPath = "conf/default.conf";
-		std::cout << "\nNo config file provided, using default: " << configPath << std::endl;
+		std::cout << "\nNo config file provided, using default" << std::endl;
 		return (true);
 	}
 

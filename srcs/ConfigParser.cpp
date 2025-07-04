@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigParser.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kellen <kellen@student.42.fr>              +#+  +:+       +#+        */
+/*   By: kbolon <kbolon@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:20:05 by kbolon            #+#    #+#             */
-/*   Updated: 2025/06/12 17:40:43 by kellen           ###   ########.fr       */
+/*   Updated: 2025/07/04 14:31:43 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -164,8 +164,13 @@ void	ConfigParser::print() const {
 
 void	ConfigParser::parseServerDirective(ServerConfig& server, const std::string& key, const std::string& value) {
 	//store the list of ports as raw data to be converted later
-	if (key == "listen")
+	if (key == "listen") {
+//		if (isValidIP(value)) {
 		server.listen_entries.push_back(value);
+//		}
+//		else
+//			error ("Unknown listen directive: '" + value + "'\n");
+	}
 	else if (key == "port")
 		error ("Unknown directive in server block: '" + key + "'\n");
 	else if (key == "host")
@@ -243,3 +248,4 @@ void	ConfigParser::applyInheritance(LocationConfig& location, const ServerConfig
 void	ConfigParser::error(const std::string& msg) const {
 	std::cerr << "⚠️ ConfigParser: " << msg << std::endl;
 }
+

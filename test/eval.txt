@@ -9,11 +9,11 @@ cd siege-4.1.7
 make
 make install
 
-add this to  ~./zshrc
+add this to  ~/.zshrc
 export PATH="$HOME/.local/bin:$PATH"
 
 #get webserv started and then type to make sure it works:
-curl http://localhost:8081/empty.html
+curl -i http://localhost:8081/empty.html
 
 To stress test: 
 siege -c 25 -t 30S -b http://localhost:8081/empty.html
@@ -25,7 +25,7 @@ DELETE
 
 
 CGI TEST INFINITY LOOP (should time out)
-curl http://localhost:8081/cgi-bin/infinity.py
+curl -i http://localhost:8081/cgi-bin/infinity.py
 
 
 UPLOAD
@@ -41,7 +41,7 @@ dd if=/dev/zero of=bigfile.txt bs=1M count=2
 chmod +r test/bigfile.txt
 
 OPEN DEFAULT INDEX
-curl http://localhost:8081/
+curl -i -F http://localhost:8081/
 
 GET:
 curl -v http://localhost:8081/upload/test.txt
@@ -89,4 +89,4 @@ curl -i http://localhost:8081/this/does/not/exist
 
 TEST REDIRECTS:
 curl -iL http://localhost:8081/redirect
-should return 301 and the redirect page
+should return 302 and the redirect page
