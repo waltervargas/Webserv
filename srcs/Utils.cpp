@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/12 03:08:22 by kellen            #+#    #+#             */
-/*   Updated: 2025/07/04 14:30:31 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/07/04 15:54:09 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -188,10 +188,6 @@ bool writeFileToServer(const std::string& request, size_t contentStart, size_t c
 	}
 
 	outFile.close();
-	// Get pointer to file data and write it
-	// const char* fileData = request.c_str() + contentStart;
-	// outFile.write(fileData, contentLength);
-	// outFile.close();
 
 	// Check for write errors
 	if (outFile.fail()) {

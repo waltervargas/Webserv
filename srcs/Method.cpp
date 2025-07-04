@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/11 23:13:55 by kellen            #+#    #+#             */
-/*   Updated: 2025/07/04 14:49:06 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/07/04 15:56:56 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -247,6 +247,11 @@ void handleFileUpload(int fd, const Request& req, const std::string& path,
 	}
 
 	file.write(body.c_str(), body.size());
+	if (file.fail()) {
+		std::cerr << "❌ Error writing handleFileUpload" << std::endl;
+		file.close();
+		return;
+	}
 	file.close();
 
 	// Check if file was written successfully
