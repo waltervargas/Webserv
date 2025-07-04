@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   helperFunction.cpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: keramos- <keramos-@student.42.fr>          +#+  +:+       +#+        */
+/*   By: kbolon <kbolon@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:19:59 by kbolon            #+#    #+#             */
-/*   Updated: 2025/07/04 15:18:38 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/07/04 15:59:12 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -445,6 +445,11 @@ bool sendFileChunked(int fd, const std::string& fullPath, const std::string& con
 	size_t chunkCount = 0;
 
 	while (file.read(buffer, sizeof(buffer)) || file.gcount() > 0) {
+		if (file.bad()) {
+			std::cerr << "❌ File read error during chunked transfer" << std::endl;
+			file.close();
+			return false;
+		}
 		size_t bytesRead = file.gcount();
 		chunkCount++;
 
