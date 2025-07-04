@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CgiFunctions.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kbolon <kbolon@42.fr>                      +#+  +:+       +#+        */
+/*   By: keramos- <keramos-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/19 15:38:46 by kbolon            #+#    #+#             */
-/*   Updated: 2025/07/03 18:11:10 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/07/04 15:47:12 by keramos-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -183,7 +183,7 @@ std::string executeScript(const std::string& interpreter, const std::string& scr
 		execve(interpreter.c_str(), args, &envp[0]);
 
 		// If we reach here, execve failed
-		std::cerr << "❌ execve failed: " << strerror(errno) << std::endl;
+		std::cerr << "❌ execve failed"<< std::endl;
 		exit(1);
 	} else {
 		// Parent process: read the output
@@ -241,7 +241,7 @@ std::string executeScript(const std::string& interpreter, const std::string& scr
 
 		if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
 			std::cout << "✅ Script executed successfully" << std::endl;
-		} 
+		}
 		else {
 			std::cout << "⚠️ Script exited with status: " << WEXITSTATUS(status) << std::endl;
 		}
@@ -262,21 +262,36 @@ std::string formatCGIResponse(const std::string& scriptOutput) {
 
 	// Check if the script already included HTTP headers
 	size_t headerEnd = scriptOutput.find("\r\n\r\n");
-	if (headerEnd != std::string::npos && scriptOutput.find("Content-Type:") < headerEnd) {
-		// Script provided its own headers, just add HTTP status line
-//		std::cout << "✅ Script provided its own headers" << std::endl;
-		// Script provided its own headers, just add HTTP status line
-		return "HTTP/1.1 200 OK\r\n" + scriptOutput;
-	} else {
-		// Script didn't provide headers, add them
-		std::cout << "📝 Adding HTTP headers to script output" << std::endl;
-		std::ostringstream response;
-		response << "HTTP/1.1 200 OK\r\n";
-		response << "Content-Type: text/html\r\n";
-		response << "Content-Length: " << scriptOutput.size() << "\r\n";
-		response << "Connection: close\r\n";
-		response << "\r\n";
-		response << scriptOutput;
-		return response.str();
+	if (headerEnd != std::string::npos) {
+		// Check if script provided its own status
+		size_t statusPos = scriptOutput.find("Status:");
+		if (statusPos != std::string::npos && statusPos < headerEnd) {
+			// Extract status code from "Status: 418 I'm a teapot"
+			size_t statusStart = statusPos + 7; // "Status:" length
+			size_t statusEnd = scriptOutput.find("\r\n", statusStart);
+			if (statusEnd != std::string::npos) {
+				std::string statusLine = scriptOutput.substr(statusStart, statusEnd - statusStart);
+				// Remove the Status: line from output and add proper HTTP status
+				std::string cleanedOutput = scriptOutput;
+				cleanedOutput.erase(statusPos, statusEnd - statusPos + 2); // +2 for \r\n
+
+				return "HTTP/1.1 " + statusLine + "\r\n" + cleanedOutput;
+			}
+		}
+
+		// Script provided headers but no status - default to 200
+		if (scriptOutput.find("Content-Type:") < headerEnd) {
+			return "HTTP/1.1 200 OK\r\n" + scriptOutput;
+		}
 	}
+
+	// Script didn't provide headers, add them
+	std::ostringstream response;
+	response << "HTTP/1.1 200 OK\r\n";
+	response << "Content-Type: text/html\r\n";
+	response << "Content-Length: " << scriptOutput.size() << "\r\n";
+	response << "Connection: close\r\n";
+	response << "\r\n";
+	response << scriptOutput;
+	return response.str();
 }

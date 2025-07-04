@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   helperFunction.cpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kbolon <kbolon@student.42.fr>              +#+  +:+       +#+        */
+/*   By: keramos- <keramos-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/16 17:19:59 by kbolon            #+#    #+#             */
-/*   Updated: 2025/07/04 12:57:06 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/07/04 15:39:29 by keramos-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,13 +70,22 @@ std::string	trim(std::string& s) {
 
 bool safeSend(int fd, const std::string& data) {
 	ssize_t sent = send(fd, data.c_str(), data.size(), 0);
+
 	if (sent == -1) {
-		std::cerr << "❌ send() failed: " << strerror(errno) << "\n";
+		// Error case
+		std::cerr << "❌ send() failed\n";
+		return false;
+	} else if (sent == 0) {
+		// Connection closed case
+		std::cerr << "❌ Connection closed by peer\n";
 		return false;
 	} else if (sent != (ssize_t)data.size()) {
+		// Partial send case
 		std::cerr << "⚠️ Partial send: only " << sent << " bytes sent out of " << data.size() << "\n";
 		return false;
 	}
+
+	// Success case: sent == data.size()
 	return true;
 }
 

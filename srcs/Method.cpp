@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Method.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kellen <kellen@student.42.fr>              +#+  +:+       +#+        */
+/*   By: keramos- <keramos-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/06/11 23:13:55 by kellen            #+#    #+#             */
-/*   Updated: 2025/07/03 22:50:35 by kellen           ###   ########.fr       */
+/*   Updated: 2025/07/04 15:45:42 by keramos-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@ bool handleGet(int fd, const Request& req, const std::string& path, const Locati
 		if (!handleSimpleCGI(fd, req, path, config)) {
 			return false;
 		}
+		return true;
 	}
 
 	// NEW: Handle API endpoint for listing uploaded files
@@ -53,6 +54,7 @@ bool handleGet(int fd, const Request& req, const std::string& path, const Locati
 			std::string indexPath = fullPath + "/" + config.index;
 			if (fileExists(indexPath)) {
 				serveStaticFile(indexPath, fd, config);
+				return true;
 			} else {
 				std::cout << "❌ Directory access forbidden: " << path << std::endl;
 				std::string body = getErrorPageBody(403, config);
@@ -65,6 +67,7 @@ bool handleGet(int fd, const Request& req, const std::string& path, const Locati
 		// Serve static file
 		serveStaticFile(path, fd, config);
 //		std::cout << "✅ serveStaticFile call completed" << std::endl;
+		return true;
 	}
 	return true;
 }
@@ -196,7 +199,7 @@ void handleFileRename(int fd, const std::string& path, const std::string& newNam
 		std::string responseBody = "File renamed successfully: " + currentFilename + " → " + newName;
 		sendHtmlResponse(fd, 200, responseBody);
 	} else {
-		std::cout << "❌ Failed to rename file: " << strerror(errno) << std::endl;
+		std::cout << "❌ Failed to rename file"<< std::endl;
 		std::string body = getErrorPageBody(500, config);
 		sendHtmlResponse(fd, 500, body);
 	}
@@ -370,7 +373,7 @@ void createDirectoryIfNotExists(const std::string& path) {
 		if (mkdir(path.c_str(), 0755) == 0) {
 			std::cout << "📁 Created directory: " << path << std::endl;
 		} else {
-			std::cout << "❌ Failed to create directory: " << path << " - " << strerror(errno) << std::endl;
+			std::cout << "❌ Failed to create directory: " << path << std::endl;
 		}
 	}
 }
