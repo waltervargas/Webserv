@@ -6,7 +6,7 @@
 /*   By: kbolon <kbolon@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/19 15:38:46 by kbolon            #+#    #+#             */
-/*   Updated: 2025/07/04 16:12:07 by kbolon           ###   ########.fr       */
+/*   Updated: 2025/07/04 17:24:41 by kbolon           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -196,21 +196,7 @@ std::string executeScript(const std::string& interpreter, const std::string& scr
 		std::string body = req.getBody();
 		if (!body.empty() && req.getMethod() == "POST") {
 //			std::cout << "📤 Sending POST data to script (" << body.size() << " bytes)" << std::endl;
-			size_t	totalWritten = 0;
-			size_t	toWrite = body.size();
-			const char* data = body.c_str();
-			while (totalWritten < toWrite) {
-				ssize_t	written = write(inputPipe[1], data + totalWritten, toWrite - totalWritten);
-				if (written == 0) {
-					std::cerr << "❌ write() returned 0 — nothing written, possible pipe closed\n";
-					break;
-				}
-				if (written < 0) {
-					std::cerr << "❌ write() error — write() returned -1\n";
-					break;
-				}
-				totalWritten += written;
-			}
+			write(inputPipe[1], body.c_str(), body.size());
 		}
 		close(inputPipe[1]); // Close input pipe
 
@@ -241,26 +227,19 @@ std::string executeScript(const std::string& interpreter, const std::string& scr
 					"Content-Type: text/html\r\n\r\n"
 					"<html><body><h1>504 Gateway Timeout</h1></body></html>";
 		}
+		else
+			waitpid(pid, &status, 0);
 		// Read all output from the script
 		std::string output;
 		char buffer[8192];
 		ssize_t bytesRead;
-		while (true) {
-			bytesRead = read(outputPipe[0], buffer, sizeof(buffer));
-			if (bytesRead > 0)
-				output.append(buffer, bytesRead);
-			else if (bytesRead == 0) //EOF reached
-				break;
-			else {
-				std::cerr << "❌ Error during CGI read (read() returned -1)" << std::endl;
-				break;
-			}
+		while ((bytesRead = read(outputPipe[0], buffer, sizeof(buffer))) > 0) {
+			output.append(buffer, bytesRead);
 		}
 
 		close(outputPipe[0]);
 
-		// Wait for child process to finish
-
+		// Wait for child process to finish	
 		if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
 			std::cout << "✅ Script executed successfully" << std::endl;
 		}

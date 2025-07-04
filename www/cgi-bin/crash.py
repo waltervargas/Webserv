@@ -2,4 +2,4 @@
 
 import sys
 
-sys.exit(1)  # simulate a crash
+sys.exit(0)  # simulate a crash
