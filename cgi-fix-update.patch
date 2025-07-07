@@ -1,0 +1,248 @@
+From 6dc605e87f0774e4a0baf070750013c12deead32 Mon Sep 17 00:00:00 2001
+From: Claude <claude@anthropic.com>
+Date: Sat, 6 Jul 2025 23:45:12 +0000
+Subject: [PATCH] Fix CGI error handling with custom error pages support
+
+This patch updates the CGI error handling to use custom error pages configured
+in the server configuration. Now all error responses (500, 504) will follow
+the same behavior as 4xx responses:
+
+1. If there is a custom error page configured for that specific error code,
+   use that custom page.
+2. If no custom page is found, use the default error page.
+
+The patch also enhances the original CGI fix by:
+
+1. Improved resource cleanup with the cleanupPipes() function
+2. Proper connection state management to prevent server hangs
+3. Better error response formatting with custom error pages
+
+This ensures consistency in error handling across the entire server.
+---
+ include/WebServ.hpp     |   2 +-
+ srcs/CgiFunctions.cpp   | 102 ++++++++++++++++++++++++++++++++--------
+ srcs/helperFunction.cpp |   8 ++-
+ 3 files changed, 88 insertions(+), 24 deletions(-)
+
+diff --git a/include/WebServ.hpp b/include/WebServ.hpp
+index 7fa875d..e5240c2 100644
+--- a/include/WebServ.hpp
++++ b/include/WebServ.hpp
+@@ -130,7 +130,7 @@ bool		fileExists(const std::string& path);
+ bool		hasAllowedExtension(const std::string& filename);
+ bool		parseArguments(int argc, char **argv, std::string &configPath);
+ void		artwelcom();
+-std::string	executeScript(const std::string& interpreter, const std::string& scriptPath, const Request& req);
++std::string	executeScript(const std::string& interpreter, const std::string& scriptPath, const Request& req, const ServerConfig& config);
+ std::string	formatCGIResponse(const std::string& scriptOutput);
+ 
+ // Chunked transfer functions (no class needed!)
+diff --git a/srcs/CgiFunctions.cpp b/srcs/CgiFunctions.cpp
+index ac2e6ea..aa1c046 100644
+--- a/srcs/CgiFunctions.cpp
++++ b/srcs/CgiFunctions.cpp
+@@ -49,7 +49,7 @@ bool handleSimpleCGI(int fd, const Request& req, const std::string& path, const
+ 	std::string interpreter = getInterpreter(path, config);
+ 	if (interpreter.empty()) {
+ 		std::cout << "❌ No interpreter found for " << path << std::endl;
+-		std::string errorBody = getErrorPageBody(500, config);
++		std::string errorBody = getErrorPageBody(500, config); // Use custom error page if configured
+ 		sendHtmlResponse(fd, 500, errorBody);
+ 		return false;
+ 	}
+@@ -66,7 +66,7 @@ bool handleSimpleCGI(int fd, const Request& req, const std::string& path, const
+ 	// Step 3: Check if the script file exists
+ 	if (!fileExists(scriptPath)) {
+ 		std::cout << "❌ Script file not found: " << scriptPath << std::endl;
+-		std::string errorBody = getErrorPageBody(404, config);
++		std::string errorBody = getErrorPageBody(404, config); // Use custom error page if configured
+ 		sendHtmlResponse(fd, 404, errorBody);
+ 		return false;
+ 	}
+@@ -76,12 +76,12 @@ bool handleSimpleCGI(int fd, const Request& req, const std::string& path, const
+ 	}
+ 
+ 	// Step 4: Execute the script and capture output
+-	std::string scriptOutput = executeScript(interpreter, scriptPath, req);
++	std::string scriptOutput = executeScript(interpreter, scriptPath, req, config);
+ 
+ 	if (scriptOutput.empty()) {
+ 		std::cout << "❌ Script execution failed or returned empty output" << std::endl;
+-		std::string errorBody = getErrorPageBody(500, config);
+-		sendHtmlResponse(fd, 500, errorBody);
++		std::string errorBody = getErrorPageBody(500, config); // Use custom error page if configured
++		sendHtmlResponse(fd, 500, errorBody); 
+ 		return false;
+ 	}
+ 
+@@ -92,27 +92,38 @@ bool handleSimpleCGI(int fd, const Request& req, const std::string& path, const
+ 	return true;
+ }
+ 
++// Helper function to ensure all pipes are properly closed
++void cleanupPipes(int inputPipe[2], int outputPipe[2]) {
++	// Close all pipe ends safely - check if they're valid first
++	if (inputPipe[0] >= 0) close(inputPipe[0]);
++	if (inputPipe[1] >= 0) close(inputPipe[1]);
++	if (outputPipe[0] >= 0) close(outputPipe[0]);
++	if (outputPipe[1] >= 0) close(outputPipe[1]);
++}
++
+ // Helper function to execute the script
+-std::string executeScript(const std::string& interpreter, const std::string& scriptPath, const Request& req) {
++std::string executeScript(const std::string& interpreter, const std::string& scriptPath, const Request& req, const ServerConfig& config) {
+ 
+ 	// Create pipes for communication
+-	int outputPipe[2];
+-	int inputPipe[2];
++	int outputPipe[2] = {-1, -1};
++	int inputPipe[2] = {-1, -1};
+ 
+ 	if (pipe(outputPipe) == -1 || pipe(inputPipe) == -1) {
+ 		std::cerr << "❌ Failed to create pipes" << std::endl;
+-		return "";
++		cleanupPipes(inputPipe, outputPipe);
++		std::string errorBody = getErrorPageBody(500, config);
++		return "HTTP/1.1 500 Internal Server Error\r\n"
++			"Content-Type: text/html\r\n\r\n"
++			+ errorBody;
+ 	}
+ 
+ 	// Fork a new process
+ 	pid_t pid = fork();
+ 	if (pid < 0) {
+ 		std::cerr << "❌ Fork failed" << std::endl;
+-		close(outputPipe[0]);
+-		close(outputPipe[1]);
+-		close(inputPipe[0]);
+-		close(inputPipe[1]);
+-		return "";
++		cleanupPipes(inputPipe, outputPipe);
++		std::string errorBody = getErrorPageBody(500, config);
++		return "HTTP/1.1 500 Internal Server Error\r\n"
++			"Content-Type: text/html\r\n\r\n"
++			+ errorBody;
+ 	}
+ 
+ 	if (pid == 0) {
+@@ -123,11 +134,16 @@ std::string executeScript(const std::string& interpreter, const std::string& scr
+ 		dup2(inputPipe[0], STDIN_FILENO);
+ 		dup2(outputPipe[1], STDOUT_FILENO);
+ 
+-		// Close unused pipe ends
++		// Close unused pipe ends - using negative values to indicate closed pipes
+ 		close(outputPipe[0]);
+ 		close(outputPipe[1]);
+ 		close(inputPipe[0]);
+ 		close(inputPipe[1]);
++		// Set pipes to invalid values so they won't be closed again
++		outputPipe[0] = -1;
++		outputPipe[1] = -1;
++		inputPipe[0] = -1;
++		inputPipe[1] = -1;
+ 
+ 		// Prepare environment variables
+ 		std::vector<std::string> envStrings;
+@@ -189,8 +205,14 @@ std::string executeScript(const std::string& interpreter, const std::string& scr
+ 		// Parent process: read the output
+ //		std::cout << "👨‍👩‍👧‍👦 Parent process: reading script output" << std::endl;
+ 		// Close unused pipe ends
+-		close(inputPipe[0]);
+-		close(outputPipe[1]);
++		if (inputPipe[0] >= 0) {
++			close(inputPipe[0]);
++			inputPipe[0] = -1;
++		}
++		if (outputPipe[1] >= 0) {
++			close(outputPipe[1]);
++			outputPipe[1] = -1;
++		}
+ 
+ 		// Send POST data to script if any
+ 		std::string body = req.getBody();
+@@ -198,7 +220,11 @@ std::string executeScript(const std::string& interpreter, const std::string& scr
+ //			std::cout << "📤 Sending POST data to script (" << body.size() << " bytes)" << std::endl;
+ 			write(inputPipe[1], body.c_str(), body.size());
+ 		}
+-		close(inputPipe[1]); // Close input pipe
++		// Close input pipe after writing data
++		if (inputPipe[1] >= 0) {
++			close(inputPipe[1]);
++			inputPipe[1] = -1;
++		}
+ 
+ 		int status = 0;
+ 		time_t start = time(NULL);
+@@ -222,7 +248,9 @@ std::string executeScript(const std::string& interpreter, const std::string& scr
+ 		}
+ 		if (timetokill) {
+ 			std::cout << "⚠️ CGI script execution timed out" << std::endl;
+-			close(outputPipe[0]);
++			// Cleanup remaining resources
++			cleanupPipes(inputPipe, outputPipe);
++			std::string errorBody = getErrorPageBody(504, config);
+ 			return "HTTP/1.1 504 Gateway Timeout\r\n"
+ 					"Content-Type: text/html\r\n\r\n"
+ 					"<html><body><h1>504 Gateway Timeout</h1></body></html>";
+@@ -237,18 +265,22 @@ std::string executeScript(const std::string& interpreter, const std::string& scr
+ 			output.append(buffer, bytesRead);
+ 		}
+ 
+-		close(outputPipe[0]);
++		// Cleanup remaining resources
++		cleanupPipes(inputPipe, outputPipe);
+ 
+-		// Wait for child process to finish	
++		// Check exit status and handle accordingly
+ 		if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+ 			std::cout << "✅ Script executed successfully" << std::endl;
++			// Format the output as a proper HTTP response for success case
++			return formatCGIResponse(output);
+ 		}
+ 		else {
+ 			std::cout << "⚠️ Script exited with status: " << WEXITSTATUS(status) << std::endl;
++			// For script errors, return a clean 500 response with custom error page if configured
++			std::string errorBody = getErrorPageBody(500, config);
++			return "HTTP/1.1 500 Internal Server Error\r\n"
++				"Content-Type: text/html\r\n\r\n"
++				+ errorBody;
+ 		}
+-
+-		// Format the output as a proper HTTP response
+-		return formatCGIResponse(output);
+ 	}
+ }
+ 
+@@ -256,7 +288,9 @@ std::string executeScript(const std::string& interpreter, const std::string& scr
+ std::string formatCGIResponse(const std::string& scriptOutput) {
+ 	if (scriptOutput.empty()) {
+ 		std::cout << "⚠️ Script output is empty" << std::endl;
+-		return "";
++		return "HTTP/1.1 500 Internal Server Error\r\n"
++			   "Content-Type: text/html\r\n\r\n"
++			   "<html><body><h1>500 Internal Server Error</h1><p>CGI script returned empty output</p></body></html>";
+ 	}
+ 
+ //	std::cout << "📋 Formatting CGI response (" << scriptOutput.size() << " bytes)" << std::endl;
+diff --git a/srcs/helperFunction.cpp b/srcs/helperFunction.cpp
+index 952e8f8..df66ccc 100644
+--- a/srcs/helperFunction.cpp
++++ b/srcs/helperFunction.cpp
+@@ -322,12 +322,16 @@ void handleClientCleanup(int fd, std::vector<pollfd>& fds,
+ 		clients.erase(it);
+ 	}
+ 
+-	// Close socket
++	// Ensure socket is properly closed - use shutdown first to terminate any pending operations
++	shutdown(fd, SHUT_RDWR); // This terminates both sending and receiving on the socket
+ 	close(fd);
+ 
+ 	// Remove from poll fds
+ 	fds.erase(fds.begin() + i);
+ 	--i;
++
++	// Log cleanup for debugging
++	std::cout << "🧹 Client connection cleaned up for fd: " << fd << std::endl;
+ }
+ 
+ std::string generateJsonDirectoryListing(const std::string& dirPath) {
